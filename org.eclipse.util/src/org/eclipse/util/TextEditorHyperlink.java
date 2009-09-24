@@ -54,22 +54,12 @@ public class TextEditorHyperlink implements IHyperlink {
 				TextEditor textEditor = (TextEditor)editor;
 				IDocument document = textEditor.getDocumentProvider().getDocument(editorInput);
 
-				// Calculate the offset, corrected by the tab width
-				int offset = DocumentUtils.getOffsetOfPosition(document, lineNumber, columnNumber);
 				int tabWidth = getTabWidth();
 				if (tabWidth <= 0) {
 					tabWidth = EditorsUI.getPreferenceStore().getInt(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_TAB_WIDTH);
 				}
-				int decrement = tabWidth - 1;
-				int lineOffset = document.getLineOffset(lineNumber);
-				int correctedColumnNumber = columnNumber;
-				for (int currentOffset = lineOffset; currentOffset < lineOffset + correctedColumnNumber; currentOffset++) {
-					if (document.getChar(currentOffset) == '\t') {
-						offset -= decrement;
-						correctedColumnNumber -= decrement;
-					}
-				}
 
+				int offset = DocumentUtils.getOffsetOfPosition(document, lineNumber, columnNumber, tabWidth);
 				textEditor.selectAndReveal(offset, 0);
 			}
 		} catch (Exception e) {

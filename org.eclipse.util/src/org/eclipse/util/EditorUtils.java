@@ -2,6 +2,8 @@ package org.eclipse.util;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
 public class EditorUtils {
@@ -10,10 +12,18 @@ public class EditorUtils {
 	}
 
 	/**
-	 * Returns the topmost visible editor part.
+	 * Returns the topmost visible editor part, if there is any.
 	 */
 	public static IEditorPart getActiveEditor() {
-		return PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+		IWorkbenchWindow workbenchWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+		if (workbenchWindow == null) {
+			return null;
+		}
+		IWorkbenchPage page = workbenchWindow.getActivePage();
+		if (page == null) {
+			return null;
+		}
+		return page.getActiveEditor();
 	}
 
 	/**
@@ -26,8 +36,8 @@ public class EditorUtils {
 		if (activeEditor == null) {
 			return null;
 		}
-		IFile file = (IFile)activeEditor.getEditorInput().getAdapter(IFile.class);
-		return file;
+		IFile result = (IFile)activeEditor.getEditorInput().getAdapter(IFile.class);
+		return result;
 	}
 
 }

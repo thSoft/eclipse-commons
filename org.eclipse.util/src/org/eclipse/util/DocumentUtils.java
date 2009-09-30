@@ -17,32 +17,42 @@ public class DocumentUtils {
 
 	/**
 	 * Calculates the offset of the position specified by a line and a column
-	 * number, taking the given tab width into account. Line and column numbering
-	 * starts from 0.
+	 * number, taking the given tab width into account, if it is greater than 1.
+	 * Line and column numbering starts from 0.
 	 */
 	public static int getOffsetOfPosition(IDocument document, int lineNumber, int columnNumber, int tabWidth) throws BadLocationException {
 		int offset = document.getLineOffset(lineNumber) + columnNumber;
-		// Correct by tab width
-		int decrement = tabWidth - 1;
-		int lineOffset = document.getLineOffset(lineNumber);
-		int correctedColumnNumber = columnNumber;
-		int spaceRegionSize = 0;
-		for (int currentOffset = lineOffset; currentOffset < lineOffset + correctedColumnNumber; currentOffset++) {
-			switch (document.getChar(currentOffset)) {
-			case '\t':
-				int correctedDecrement = decrement - spaceRegionSize;
-				offset -= correctedDecrement;
-				correctedColumnNumber -= correctedDecrement;
-				spaceRegionSize = 0;
-				break;
-			case ' ':
-				spaceRegionSize++;
-				break;
-			default:
-				spaceRegionSize = 0;
+		if (tabWidth > 1) {
+			// Correct by tab width
+			int decrement = tabWidth - 1;
+			int lineOffset = document.getLineOffset(lineNumber);
+			int correctedColumnNumber = columnNumber;
+			int spaceRegionSize = 0;
+			for (int currentOffset = lineOffset; currentOffset < lineOffset + correctedColumnNumber; currentOffset++) {
+				switch (document.getChar(currentOffset)) {
+				case '\t':
+					int correctedDecrement = decrement - spaceRegionSize;
+					offset -= correctedDecrement;
+					correctedColumnNumber -= correctedDecrement;
+					spaceRegionSize = 0;
+					break;
+				case ' ':
+					spaceRegionSize++;
+					break;
+				default:
+					spaceRegionSize = 0;
+				}
 			}
 		}
 		return offset;
+	}
+
+	/**
+	 * Calculates the offset of the position specified by a line and a column
+	 * number. Line and column numbering starts from 0.
+	 */
+	public static int getOffsetOfPosition(IDocument document, int lineNumber, int columnNumber) throws BadLocationException {
+		return getOffsetOfPosition(document, lineNumber, columnNumber, 1);
 	}
 
 	/**

@@ -1,10 +1,10 @@
 package javax.util.process;
 
+/**
+ * Processes a line of the output of a running process.
+ */
 public interface OutputProcessor {
 
-	/**
-	 * Processes a line of the output of a running process.
-	 */
-	public void processOutput(String line);
+	void processOutput(String line);
 
 }

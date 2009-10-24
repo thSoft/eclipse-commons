@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Guava
+Bundle-SymbolicName: com.google.common
+Bundle-Version: 1.0.0
+Bundle-ClassPath: google-collect-1.0-rc3.jar
+Bundle-Vendor: Google
+Export-Package: com.google.common.annotations,
+ com.google.common.base,
+ com.google.common.base.internal,
+ com.google.common.collect
+Bundle-RequiredExecutionEnvironment: J2SE-1.5

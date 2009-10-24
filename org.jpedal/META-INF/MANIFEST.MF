@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: JPedal
 Bundle-SymbolicName: org.jpedal
-Bundle-Version: 3.84.05
-Bundle-ClassPath: jpedal.3.84b05.jar
+Bundle-Version: 3.90.18
+Bundle-ClassPath: jpedal-3.90b18.jar
 Export-Package: com.idrsolutions.pdf.acroforms.xfa,
  com.idrsolutions.pdf.color.shading,
  com.l2fprod.common,

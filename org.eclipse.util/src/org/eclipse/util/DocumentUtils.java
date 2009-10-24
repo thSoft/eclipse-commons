@@ -48,14 +48,6 @@ public class DocumentUtils {
 	}
 
 	/**
-	 * Calculates the offset of the position specified by a line and a column
-	 * number. Line and column numbering starts from 0.
-	 */
-	public static int getOffsetOfPosition(IDocument document, int lineNumber, int columnNumber) throws BadLocationException {
-		return getOffsetOfPosition(document, lineNumber, columnNumber, 1);
-	}
-
-	/**
 	 * Returns a document with the initial contents of a file.
 	 */
 	public static IDocument getDocumentFromFile(IFile file) throws CoreException {

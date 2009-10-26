@@ -3,7 +3,6 @@ package org.eclipse.util;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IConsoleManager;
-import org.eclipse.ui.console.MessageConsole;
 
 public class ConsoleUtils {
 
@@ -11,21 +10,22 @@ public class ConsoleUtils {
 	}
 
 	/**
-	 * Returns the message console with the specified name. If it does not exist,
-	 * it will be created.
+	 * Returns the console with the specified name. If it does not exist, it will
+	 * be created using the given factory.
 	 */
-	public static MessageConsole getConsole(String name) {
+	@SuppressWarnings("unchecked")
+	public static <T extends IConsole> T getConsole(String name, ConsoleFactory<T> factory) {
 		// Find the console
 		IConsoleManager consoleManager = ConsolePlugin.getDefault().getConsoleManager();
 		for (IConsole console : consoleManager.getConsoles()) {
 			if (console.getName().equals(name)) {
-				return (MessageConsole)console;
+				return (T)console;
 			}
 		}
 		// If not found, create it
-		MessageConsole messageConsole = new MessageConsole(name, null);
-		consoleManager.addConsoles(new IConsole[] { messageConsole });
-		return messageConsole;
+		T console = factory.create(name);
+		consoleManager.addConsoles(new IConsole[] { console });
+		return console;
 	}
 
 }

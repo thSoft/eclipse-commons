@@ -13,7 +13,7 @@ public class ProcessUtils {
 	 * Runs a process synchronously described by the given process builder and
 	 * processes the lines of its output with the given output processor.
 	 */
-	public static void runProcess(ProcessBuilder processBuilder, OutputProcessor outputProcessor) throws IOException, InterruptedException {
+	public static Process runProcess(ProcessBuilder processBuilder, OutputProcessor outputProcessor) throws IOException, InterruptedException {
 		Process process = processBuilder.start();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 		String line;
@@ -23,6 +23,7 @@ public class ProcessUtils {
 			}
 		}
 		process.waitFor();
+		return process;
 	}
 
 }

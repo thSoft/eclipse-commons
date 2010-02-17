@@ -5,7 +5,6 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.editors.text.EditorsUI;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
@@ -24,7 +23,7 @@ public class TextEditorUtils {
 	public static void revealPosition(IFileEditorInput editorInput, int lineNumber, int columnNumber, int tabWidth) {
 		try {
 			IFile file = editorInput.getFile();
-			IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+			IWorkbenchPage page = UiUtils.getWorkbenchPage();
 			IEditorPart editor = IDE.openEditor(page, file);
 			if (editor instanceof TextEditor) {
 				TextEditor textEditor = (TextEditor)editor;

@@ -1,8 +1,12 @@
 package org.eclipse.util;
 
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
+import org.eclipse.ui.console.IConsoleConstants;
 import org.eclipse.ui.console.IConsoleManager;
+import org.eclipse.ui.console.IConsoleView;
 
 public class ConsoleUtils {
 
@@ -26,6 +30,22 @@ public class ConsoleUtils {
 		T console = factory.create(name);
 		consoleManager.addConsoles(new IConsole[] { console });
 		return console;
+	}
+
+	/**
+	 * Displays the given console in the Console view.
+	 */
+	public static void showConsole(final IConsole console) {
+		final IWorkbenchPage page = UiUtils.getWorkbenchPage();
+		Display.getDefault().asyncExec(new Runnable() {
+
+			@Override
+			public void run() {
+				IConsoleView consoleView = (IConsoleView)page.findView(IConsoleConstants.ID_CONSOLE_VIEW);
+				consoleView.display(console);
+			}
+
+		});
 	}
 
 }

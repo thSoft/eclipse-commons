@@ -1,5 +1,6 @@
 package org.eclipse.util;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.core.resources.IContainer;
@@ -29,6 +30,22 @@ public class ResourceUtils {
 		} catch (CoreException e) {
 		}
 		return files;
+	}
+
+	/**
+	 * Returns a file which has the same name as the given file, but its extension
+	 * is one of the given extensions. The extensions are tried in the specified
+	 * order; if none of them works, null is returned.
+	 */
+	public static IFile replaceExtension(IFile file, String[] extensions) {
+		for (String extension : extensions) {
+			String newName = MessageFormat.format("{0}.{1}", file.getName(), extension); //$NON-NLS-1$
+			IResource newResource = file.getParent().findMember(newName);
+			if (newResource instanceof IFile) {
+				return (IFile)newResource;
+			}
+		}
+		return null;
 	}
 
 }

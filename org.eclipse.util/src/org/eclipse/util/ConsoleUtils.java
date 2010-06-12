@@ -42,7 +42,9 @@ public class ConsoleUtils {
 			@Override
 			public void run() {
 				IConsoleView consoleView = (IConsoleView)page.findView(IConsoleConstants.ID_CONSOLE_VIEW);
-				consoleView.display(console);
+				if (consoleView != null) {
+					consoleView.display(console);
+				}
 			}
 
 		});

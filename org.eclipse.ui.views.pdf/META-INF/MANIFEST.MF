@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: PDF Viewer
+Bundle-SymbolicName: org.eclipse.ui.views.pdf
+Bundle-Version: 0.0.0.qualifier
+Bundle-Vendor: Open Source Community
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.core.resources;bundle-version="3.6.0",
+ org.jpedal;bundle-version="3.90.18",
+ org.eclipse.swt.util;bundle-version="0.0.0",
+ org.eclipse.util;bundle-version="0.0.0";visibility:=reexport,
+ org.eclipse.ui.views.file;bundle-version="0.0.0";visibility:=reexport
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: org.eclipse.ui.views.pdf

@@ -21,7 +21,11 @@ public class EditorUtils {
 	 */
 	public static IEditorPart getActiveEditor() {
 		IWorkbenchPage page = UiUtils.getWorkbenchPage();
-		return page.getActiveEditor();
+		if (page == null) {
+			return null;
+		} else {
+			return page.getActiveEditor();
+		}
 	}
 
 	/**

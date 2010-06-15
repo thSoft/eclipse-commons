@@ -34,8 +34,9 @@ public class ViewedFileChangeListener implements IResourceChangeListener {
 							IViewPart view = viewReference.getView(false);
 							if (view instanceof FileView) {
 								FileView fileView = (FileView)view;
-								if (Arrays.asList(fileView.getExtensions()).contains(extension)) {
-									fileView.reload((IFile)resource);
+								IFile file = (IFile)resource;
+								if (Arrays.asList(fileView.getExtensions()).contains(file.getFileExtension())) {
+									fileView.reload(file);
 								}
 							}
 						}

@@ -6,3 +6,11 @@ Bundle-Version: 1.0.5
 Bundle-ClassPath: guava-r05.jar
 Bundle-Vendor: Google
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Export-Package: com.google.common.annotations,
+ com.google.common.base,
+ com.google.common.base.internal,
+ com.google.common.collect,
+ com.google.common.io,
+ com.google.common.net,
+ com.google.common.primitives,
+ com.google.common.util.concurrent

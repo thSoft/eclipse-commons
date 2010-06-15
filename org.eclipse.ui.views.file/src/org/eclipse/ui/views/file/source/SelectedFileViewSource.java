@@ -1,4 +1,4 @@
-package org.eclipse.ui.views.file;
+package org.eclipse.ui.views.file.source;
 
 import java.util.Arrays;
 import org.eclipse.core.resources.IFile;
@@ -8,6 +8,7 @@ import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.views.file.FileView;
 
 /**
  * A source for the currently selected file (or a file derived from it).
@@ -15,8 +16,8 @@ import org.eclipse.ui.PlatformUI;
 public class SelectedFileViewSource extends AbstractFileViewSource implements ISelectionListener {
 
 	@Override
-	public void init(FileView fileView) {
-		super.init(fileView);
+	public void init(FileView fileView, boolean startup) {
+		super.init(fileView, startup);
 		ISelectionService selectionService = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getSelectionService();
 		selectionService.addPostSelectionListener(this);
 		selectionChanged(null, selectionService.getSelection());
@@ -31,9 +32,11 @@ public class SelectedFileViewSource extends AbstractFileViewSource implements IS
 				IFile selectedFile = (IFile)selectedElement;
 				if (Arrays.asList(getFileView().getExtensions()).contains(selectedFile.getFileExtension())) {
 					getFileView().show(getFile(selectedFile));
+					return;
 				}
 			}
 		}
+		getFileView().hide();
 	}
 
 	@Override
@@ -52,6 +55,11 @@ public class SelectedFileViewSource extends AbstractFileViewSource implements IS
 	@Override
 	public String getName() {
 		return "Selected";
+	}
+
+	@Override
+	public String getLongName() {
+		return "Selected file";
 	}
 
 }

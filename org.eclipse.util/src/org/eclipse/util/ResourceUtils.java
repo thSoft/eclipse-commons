@@ -1,12 +1,13 @@
 package org.eclipse.util;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 
 public class ResourceUtils {
 
@@ -34,18 +35,11 @@ public class ResourceUtils {
 
 	/**
 	 * Returns a file which has the same name as the given file, but its extension
-	 * is one of the given extensions. The extensions are tried in the specified
-	 * order; if none of them works, null is returned.
+	 * is replaced with the given extension.
 	 */
-	public static IFile replaceExtension(IFile file, String[] extensions) {
-		for (String extension : extensions) {
-			String newName = MessageFormat.format("{0}.{1}", file.getName(), extension); //$NON-NLS-1$
-			IResource newResource = file.getParent().findMember(newName);
-			if (newResource instanceof IFile) {
-				return (IFile)newResource;
-			}
-		}
-		return null;
+	public static IFile replaceExtension(IFile file, String extension) {
+		IPath newPath = file.getFullPath().removeFileExtension().addFileExtension(extension);
+		return ResourcesPlugin.getWorkspace().getRoot().getFile(newPath);
 	}
 
 }

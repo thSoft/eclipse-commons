@@ -9,6 +9,9 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.action.IContributionItem;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -24,7 +27,7 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.views.file.source.IFileViewSource;
 
 /**
- * The default implementation of {@link FileView}.
+ * A view that displays the file determined by its current source.
  */
 public class FileView extends ViewPart {
 
@@ -44,7 +47,7 @@ public class FileView extends ViewPart {
 
 	private static final String SOURCE = "source"; //$NON-NLS-1$
 
-	private IFileViewType type;
+	private IFileViewType<? super Composite> type;
 
 	private final List<String> extensions = new ArrayList<String>();
 
@@ -62,8 +65,15 @@ public class FileView extends ViewPart {
 
 	private Control errorPage;
 
-	private FileViewSourceMenu sourceMenu = new FileViewSourceMenu(this);
+	private FileViewSourceMenu sourceMenu;
 
+	private IToolBarManager toolbar;
+
+	private boolean toolbarFilled = false;
+
+	private IContributionItem[] toolbarContributions;
+
+	@SuppressWarnings("unchecked")
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		super.init(site, memento);
@@ -74,7 +84,7 @@ public class FileView extends ViewPart {
 				try {
 					Object type = configurationElement.createExecutableExtension("type"); //$NON-NLS-1$
 					if (type instanceof IFileViewType) {
-						this.type = (IFileViewType)type;
+						this.type = (IFileViewType<? super Composite>)type;
 					}
 				} catch (CoreException e) {
 					Activator.logError("Can't initialize file view type", e);
@@ -100,6 +110,8 @@ public class FileView extends ViewPart {
 									String pluginId = sourceConfigurationElement.getDeclaringExtension().getNamespaceIdentifier();
 									String imageFilePath = sourceConfigurationElement.getAttribute("icon"); //$NON-NLS-1$
 									sourceDescriptor.icon = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imageFilePath);
+									// Toolbar contributions
+									toolbarContributions = type.getToolbarContributions();
 								}
 							} catch (CoreException e) {
 								Activator.logError("Can't instantiate file view source", e);
@@ -126,8 +138,10 @@ public class FileView extends ViewPart {
 		if ((getSourceDescriptor() == null) && !sourceDescriptors.isEmpty()) {
 			setSourceDescriptor(sourceDescriptors.get(0));
 		}
-		// Menu
-		site.getActionBars().getToolBarManager().add(sourceMenu);
+		// Source menu
+		sourceMenu = new FileViewSourceMenu(this, site.getId());
+		toolbar = site.getActionBars().getToolBarManager();
+		toolbar.add(sourceMenu);
 	}
 
 	@Override
@@ -163,16 +177,28 @@ public class FileView extends ViewPart {
 			pageBook.setVisible(false);
 			setFile(null);
 		}
+		refreshToolbar();
 	}
 
 	public void show(IFile file) {
 		if (!pageBook.isDisposed()) {
 			pageBook.setVisible(true);
 			setFile(file);
-			if ((getPage() == null) || getPage().isDisposed()) {
+			Composite page = getPage();
+			if ((page == null) || page.isDisposed()) {
 				load(file);
 			}
 			refresh();
+		}
+		// Fill toolbar for the first time
+		if (!toolbarFilled) {
+			toolbarFilled = true;
+			String sourceMenuId = sourceMenu.getId();
+			for (IContributionItem toolbarContribution : toolbarContributions) {
+				toolbar.insertBefore(sourceMenuId, toolbarContribution);
+			}
+			toolbar.insertBefore(sourceMenuId, new Separator());
+			toolbar.update(true);
 		}
 	}
 
@@ -188,13 +214,26 @@ public class FileView extends ViewPart {
 
 	private void refresh() {
 		if (pageBook != null) {
-			Control page = getPage();
+			Composite page = getPage();
 			if (page == null) {
 				pageBook.showPage(errorPage);
 			} else {
 				pageBook.showPage(page);
+				type.pageShown(page);
 			}
 		}
+		refreshToolbar();
+	}
+
+	private void refreshToolbar() {
+		for (IContributionItem toolbarContribution : toolbarContributions) {
+			boolean visible = (getFile() != null) && (getPage() != null);
+			if (visible) {
+				toolbarContribution.update();
+			}
+			toolbarContribution.setVisible(visible);
+		}
+		toolbar.update(true);
 	}
 
 	public void reload(IFile file) {
@@ -208,11 +247,7 @@ public class FileView extends ViewPart {
 		}
 	}
 
-	protected Composite getPage(IFile file) {
-		return pages.get(file);
-	}
-
-	protected Composite getPage() {
+	private Composite getPage() {
 		return pages.get(getFile());
 	}
 
@@ -228,8 +263,10 @@ public class FileView extends ViewPart {
 	}
 
 	private void refreshSourceMenu() {
-		sourceMenu.setToolTipText(MessageFormat.format("{0} ({1})", getSourceDescriptor().source.getLongName(), getFile() == null ? "none" : getFile().getFullPath()));
-		sourceMenu.setImageDescriptor(getSourceDescriptor().icon);
+		if (sourceMenu != null) {
+			sourceMenu.setToolTipText(MessageFormat.format("{0} ({1})", getSourceDescriptor().source.getLongName(), getFile() == null ? "none" : getFile().getFullPath()));
+			sourceMenu.setImageDescriptor(getSourceDescriptor().icon);
+		}
 	}
 
 	public FileViewSourceDescriptor getSourceDescriptor() {

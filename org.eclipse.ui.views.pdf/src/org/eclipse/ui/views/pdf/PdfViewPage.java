@@ -1,6 +1,7 @@
 package org.eclipse.ui.views.pdf;
 
 import java.awt.image.BufferedImage;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Image;
@@ -28,12 +29,16 @@ public class PdfViewPage extends ScrolledComposite {
 	private Composite innerContainer;
 
 	/**
-	 * The label displaying the current page of the PDF file or an error message
-	 * if the PDF is missing.
+	 * The label displaying the current page of the PDF file.
 	 */
 	private Label pdfDisplay;
 
-	public PdfViewPage(Composite parent, String filename) throws PdfException {
+	/**
+	 * Manages the contributions to the toolbar.
+	 */
+	private PdfViewToolbarManager toolbar;
+
+	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.V_SCROLL | SWT.H_SCROLL);
 		setExpandHorizontal(true);
 		setExpandVertical(true);
@@ -52,7 +57,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 		pdfDisplay = new Label(innerContainer, SWT.CENTER);
 
-		this.filename = filename;
+		this.file = file;
 
 		reload();
 	}
@@ -60,7 +65,7 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The PDF engine which renders the pages.
 	 */
-	protected final PdfDecoder pdfDecoder = new PdfDecoder();
+	private final PdfDecoder pdfDecoder = new PdfDecoder();
 
 	@Override
 	public void redraw() {
@@ -74,6 +79,7 @@ public class PdfViewPage extends ScrolledComposite {
 			} catch (PdfException e) {
 				Activator.logError("Can't redraw PDF page", e);
 			}
+			refreshToolbar();
 		}
 	}
 
@@ -81,7 +87,7 @@ public class PdfViewPage extends ScrolledComposite {
 	 * Whenever the page size changes, this method has to be called to achieve the
 	 * correct layout.
 	 */
-	protected void refreshLayout() {
+	private void refreshLayout() {
 		Point size = pdfDisplay.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 		pdfDisplay.setBounds(0, 0, size.x, size.y);
 		outerContainer.layout();
@@ -89,26 +95,26 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	/**
-	 * The full path of the open PDF file in the local file system.
+	 * The open PDF file.
 	 */
-	private String filename;
+	private IFile file;
 
-	public String getFilename() {
-		return filename;
+	public IFile getFile() {
+		return file;
 	}
 
-	public void setFilename(String filename) throws PdfException {
-		pdfDecoder.openPdfFile(filename);
-		if (filename.equals(this.filename)) {
+	public void setFile(IFile file) throws PdfException {
+		pdfDecoder.openPdfFile(file.getLocation().toOSString());
+		if (file.equals(this.file)) {
 			setPage(getPage());
 		} else {
-			this.filename = filename;
+			this.file = file;
 			setPage(1);
 		}
 	}
 
 	public void reload() throws PdfException {
-		setFilename(getFilename());
+		setFile(getFile());
 	}
 
 	public void closeFile() {
@@ -187,6 +193,20 @@ public class PdfViewPage extends ScrolledComposite {
 		if (isZoomValid(zoom)) {
 			this.zoom = zoom;
 			redraw();
+		}
+	}
+
+	public void setToolbar(PdfViewToolbarManager toolbar) {
+		this.toolbar = toolbar;
+	}
+
+	public PdfViewToolbarManager getToolbar() {
+		return toolbar;
+	}
+
+	private void refreshToolbar() {
+		if (getToolbar() != null) {
+			getToolbar().refresh();
 		}
 	}
 

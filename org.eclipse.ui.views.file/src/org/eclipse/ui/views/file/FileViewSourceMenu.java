@@ -7,14 +7,21 @@ import org.eclipse.jface.action.IMenuCreator;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
 
+/**
+ * A drop-down menu that lets the user select the file view source, and shows
+ * the current file view source and file.
+ */
 public class FileViewSourceMenu extends Action implements IMenuCreator {
+
+	private static final String ID_SUFFIX = ".toolbar.Source"; //$NON-NLS-1$
 
 	private Menu menu;
 
 	private final FileView fileView;
 
-	public FileViewSourceMenu(FileView fileView) {
-		super("Source", IAction.AS_DROP_DOWN_MENU);
+	public FileViewSourceMenu(FileView fileView, String viewId) {
+		super("", IAction.AS_DROP_DOWN_MENU); //$NON-NLS-1$
+		setId(viewId + ID_SUFFIX);
 		this.fileView = fileView;
 		setMenuCreator(this);
 	}

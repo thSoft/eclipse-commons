@@ -4,6 +4,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.ui.part.PageBook;
 import org.eclipse.ui.views.file.IFileViewType;
+import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
 
 public class PdfViewType implements IFileViewType<PdfViewPage> {
 
@@ -25,6 +26,17 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 	public void pageShown(PdfViewPage page) {
 		toolbar.setPage(page);
 		page.setToolbar(toolbar);
+		// Restore special zoom setting
+		FitToAction fitToAction = page.getFitToAction();
+		toolbar.disableFit();
+		if (fitToAction != null) {
+			fitToAction.setChecked(true);
+		}
+	}
+
+	@Override
+	public void reload(PdfViewPage page) throws Exception {
+		page.reload();
 	}
 
 }

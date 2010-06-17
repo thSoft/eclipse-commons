@@ -23,4 +23,9 @@ public class MidiViewType implements IFileViewType<MidiViewPage> {
 		// TODO Auto-generated method stub
 	}
 
+	@Override
+	public void reload(MidiViewPage page) throws Exception {
+		// TODO Auto-generated method stub
+	}
+
 }

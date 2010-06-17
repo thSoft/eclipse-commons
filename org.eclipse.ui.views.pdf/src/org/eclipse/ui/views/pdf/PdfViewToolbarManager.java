@@ -36,7 +36,11 @@ public class PdfViewToolbarManager {
 		return page;
 	}
 
-	private final FitToPageAction fitToPageAction = new FitToPageAction();
+	private final FitToAction fitToPageAction = new FitToAction("Page", "Page", true, true); //$NON-NLS-2$
+
+	private final FitToAction fitToWidthAction = new FitToAction("Width", "Width", true, false); //$NON-NLS-2$
+
+	private final FitToAction fitToHeightAction = new FitToAction("Height", "Height", false, true); //$NON-NLS-2$
 
 	private final IContributionItem[] contributions = new IContributionItem[] {
 		new ActionContributionItem(new FirstPageAction()),
@@ -47,7 +51,9 @@ public class PdfViewToolbarManager {
 		new ActionContributionItem(new ZoomOutAction()),
 		new ActionContributionItem(new ZoomInAction()),
 		new ActionContributionItem(new ZoomToActualSizeAction()),
-		new ActionContributionItem(fitToPageAction) };
+		new ActionContributionItem(fitToPageAction),
+		new ActionContributionItem(fitToWidthAction),
+		new ActionContributionItem(fitToHeightAction) };
 
 	public IContributionItem[] getToolbarContributions() {
 		return contributions;
@@ -239,7 +245,7 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public void run() {
-			fitToPageAction.setChecked(false);
+			disableFit();
 			getPage().setZoom(getNewZoom());
 		}
 
@@ -263,7 +269,7 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public void run() {
-			fitToPageAction.setChecked(false);
+			disableFit();
 			getPage().setZoom(getNewZoom());
 		}
 
@@ -287,44 +293,67 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public void run() {
-			fitToPageAction.setChecked(false);
+			disableFit();
 			getPage().setZoom(1);
 		}
 
 	}
 
-	public class FitToPageAction extends Action {
+	public void disableFit() {
+		fitToPageAction.setChecked(false);
+		fitToWidthAction.setChecked(false);
+		fitToHeightAction.setChecked(false);
+	}
+
+	public class FitToAction extends Action {
 
 		private final ControlListener resizeListener = new ControlAdapter() {
 
 			@Override
 			public void controlResized(ControlEvent e) {
 				Scrollable scrollable = getPage();
-				float imageWidth = scrollable.getClientArea().width - scrollable.getVerticalBar().getSize().x;
-				int pageWidth = getPage().getPageWidth();
-				float widthRatio = imageWidth / pageWidth;
-				float imageHeight = scrollable.getClientArea().height - scrollable.getHorizontalBar().getSize().y;
-				int pageHeight = getPage().getPageHeight();
-				float heightRatio = imageHeight / pageHeight;
+				float widthRatio = 1;
+				if (fitToWidth) {
+					float imageWidth = scrollable.getClientArea().width - scrollable.getVerticalBar().getSize().x;
+					int pageWidth = getPage().getPageWidth();
+					widthRatio = imageWidth / pageWidth;
+				}
+				float heightRatio = 1;
+				if (fitToHeight) {
+					float imageHeight = scrollable.getClientArea().height - scrollable.getHorizontalBar().getSize().y;
+					int pageHeight = getPage().getPageHeight();
+					heightRatio = imageHeight / pageHeight;
+				}
 				getPage().setZoom(Math.min(widthRatio, heightRatio));
 			}
 
 		};
 
-		public FitToPageAction() {
-			super(null, AS_CHECK_BOX);
-			setToolTipText("Fit To Page");
-			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + "FitToPage.png")); //$NON-NLS-1$
+		private final boolean fitToWidth;
+
+		private final boolean fitToHeight;
+
+		public FitToAction(String tooltipTextFragment, String iconNameFragment, boolean fitToWidth, boolean fitToHeight) {
+			super(null, AS_RADIO_BUTTON);
+			this.fitToWidth = fitToWidth;
+			this.fitToHeight = fitToHeight;
+			setToolTipText(MessageFormat.format("Fit To {0}", tooltipTextFragment));
+			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + MessageFormat.format("FitTo{0}.png", iconNameFragment))); //$NON-NLS-1$
 		}
 
 		@Override
 		public void setChecked(boolean checked) {
 			super.setChecked(checked);
+			PdfViewPage page = getPage();
 			if (checked) {
 				resizeListener.controlResized(null);
-				getPage().addControlListener(resizeListener);
+				page.addControlListener(resizeListener);
+				page.setFitToAction(this); // Save special zoom setting
 			} else {
-				getPage().removeControlListener(resizeListener);
+				page.removeControlListener(resizeListener);
+				if (page.getFitToAction() == this) { // Clear special zoom setting
+					page.setFitToAction(null);
+				}
 			}
 		}
 

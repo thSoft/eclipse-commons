@@ -126,7 +126,11 @@ public class FileView extends ViewPart {
 				}
 			}
 		}
-		// Current source
+		// Source menu
+		sourceMenu = new FileViewSourceMenu(this, site.getId());
+		toolbar = site.getActionBars().getToolBarManager();
+		toolbar.add(sourceMenu);
+		// Restore current source
 		if (memento != null) {
 			String sourceClassName = memento.getString(SOURCE);
 			for (FileViewSourceDescriptor sourceDescriptor : sourceDescriptors) {
@@ -138,10 +142,6 @@ public class FileView extends ViewPart {
 		if ((getSourceDescriptor() == null) && !sourceDescriptors.isEmpty()) {
 			setSourceDescriptor(sourceDescriptors.get(0));
 		}
-		// Source menu
-		sourceMenu = new FileViewSourceMenu(this, site.getId());
-		toolbar = site.getActionBars().getToolBarManager();
-		toolbar.add(sourceMenu);
 	}
 
 	@Override
@@ -177,7 +177,7 @@ public class FileView extends ViewPart {
 			pageBook.setVisible(false);
 			setFile(null);
 		}
-		refreshToolbar();
+		refreshToolbarContributions();
 	}
 
 	public void show(IFile file) {
@@ -222,10 +222,10 @@ public class FileView extends ViewPart {
 				type.pageShown(page);
 			}
 		}
-		refreshToolbar();
+		refreshToolbarContributions();
 	}
 
-	private void refreshToolbar() {
+	private void refreshToolbarContributions() {
 		for (IContributionItem toolbarContribution : toolbarContributions) {
 			boolean visible = (getFile() != null) && (getPage() != null);
 			if (visible) {
@@ -238,12 +238,18 @@ public class FileView extends ViewPart {
 
 	public void reload(IFile file) {
 		Composite oldPage = pages.get(file);
-		load(file);
+		if (oldPage == null) {
+			load(file);
+		} else {
+			try {
+				type.reload(oldPage);
+			} catch (Exception e) {
+				Activator.logError("Error while reloading file", e);
+				pages.put(file, null);
+			}
+		}
 		if (file.equals(getFile())) {
 			refresh();
-		}
-		if (oldPage != null) {
-			oldPage.dispose();
 		}
 	}
 

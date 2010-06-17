@@ -20,7 +20,7 @@ public class FileViewSourceMenu extends Action implements IMenuCreator {
 	private final FileView fileView;
 
 	public FileViewSourceMenu(FileView fileView, String viewId) {
-		super("", IAction.AS_DROP_DOWN_MENU); //$NON-NLS-1$
+		super(null, IAction.AS_DROP_DOWN_MENU);
 		setId(viewId + ID_SUFFIX);
 		this.fileView = fileView;
 		setMenuCreator(this);

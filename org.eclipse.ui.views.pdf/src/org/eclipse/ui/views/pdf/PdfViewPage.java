@@ -13,6 +13,7 @@ import org.eclipse.swt.util.ImageUtils;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
 
@@ -37,6 +38,11 @@ public class PdfViewPage extends ScrolledComposite {
 	 * Manages the contributions to the toolbar.
 	 */
 	private PdfViewToolbarManager toolbar;
+
+	/**
+	 * The currently selected special zoom setting.
+	 */
+	private FitToAction fitToAction;
 
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.V_SCROLL | SWT.H_SCROLL);
@@ -70,7 +76,7 @@ public class PdfViewPage extends ScrolledComposite {
 	@Override
 	public void redraw() {
 		if (isFileOpen()) {
-			pdfDecoder.setPageParameters(zoom, getPage());
+			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
 				BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
 				Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
@@ -208,6 +214,14 @@ public class PdfViewPage extends ScrolledComposite {
 		if (getToolbar() != null) {
 			getToolbar().refresh();
 		}
+	}
+
+	public void setFitToAction(FitToAction fitToAction) {
+		this.fitToAction = fitToAction;
+	}
+
+	public FitToAction getFitToAction() {
+		return fitToAction;
 	}
 
 }

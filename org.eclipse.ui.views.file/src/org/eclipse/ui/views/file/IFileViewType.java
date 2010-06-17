@@ -26,4 +26,9 @@ public interface IFileViewType<P extends Composite> {
 	 */
 	void pageShown(P page);
 
+	/**
+	 * Called when the file corresponding to the given page is reloaded.
+	 */
+	void reload(P page) throws Exception;
+
 }

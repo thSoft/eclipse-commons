@@ -1,4 +1,3 @@
-
 package org.eclipse.ui.views.pdf;
 
 import java.awt.image.BufferedImage;
@@ -13,6 +12,8 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -70,6 +71,23 @@ public class PdfViewPage extends ScrolledComposite {
 
 		hyperlinks = new Composite(innerContainer, SWT.TRANSPARENT | SWT.NO_BACKGROUND); // Both styles are required for correct transparency
 		hyperlinks.moveAbove(pdfDisplay);
+		hyperlinks.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				if ((highlightedHyperlink != null) && !highlightedHyperlink.isDisposed()) {
+					e.gc.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLUE));
+					Rectangle bounds = highlightedHyperlink.getBounds();
+					float borderWidth = HYPERLINK_HIGHLIGHT_BORDER_WIDTH * getZoom();
+					float x = bounds.x - borderWidth;
+					float y = bounds.y - borderWidth;
+					float width = bounds.width + 2 * borderWidth;
+					float height = bounds.height + 2 * borderWidth;
+					e.gc.drawRoundRectangle((int)x, (int)y, (int)width, (int)height, (int)borderWidth, (int)borderWidth);
+				}
+			}
+
+		});
 
 		this.file = file;
 		reload();
@@ -325,9 +343,9 @@ public class PdfViewPage extends ScrolledComposite {
 				annotationHyperlinkMap.put(annotation, hyperlink);
 				float zoom = getZoom();
 				float left = annotation.left * zoom;
-				float bottom = (getPageHeight() - annotation.bottom + 1) * zoom;
+				float bottom = (getPageHeight() - annotation.bottom) * zoom;
 				float right = annotation.right * zoom;
-				float top = (getPageHeight() - annotation.top + 1) * zoom;
+				float top = (getPageHeight() - annotation.top) * zoom;
 				float width = right - left;
 				float height = bottom - top;
 				hyperlink.setBounds(new Rectangle((int)left, (int)top, (int)width, (int)height));
@@ -336,23 +354,21 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	/**
-	 * The currently highlighed annotation hyperlink.
+	 * The currently highlighted hyperlink.
 	 */
 	private PdfAnnotationHyperlink highlightedHyperlink;
+
+	private static final float HYPERLINK_HIGHLIGHT_BORDER_WIDTH = 2.5f;
 
 	/**
 	 * Reveals and highlights the hyperlink of the given annotation.
 	 */
 	public void highlightAnnotation(PdfAnnotation annotation) {
-		if (highlightedHyperlink != null) {
-			// TODO de-highlight
-		}
 		setPage(annotation.page);
 		PdfAnnotationHyperlink hyperlink = annotationHyperlinkMap.get(annotation);
 		if (hyperlink != null) {
-			highlightedHyperlink = hyperlink;
 			// TODO scroll to make it visible
-			// TODO highlight
+			highlightedHyperlink = hyperlink; // TODO fade in and out?
 		}
 	}
 

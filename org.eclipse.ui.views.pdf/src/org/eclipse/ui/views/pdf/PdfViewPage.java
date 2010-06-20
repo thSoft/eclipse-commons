@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
+import org.jpedal.objects.PdfPageData;
 import org.jpedal.objects.acroforms.rendering.AcroRenderer;
 import org.jpedal.objects.raw.FormObject;
 import org.jpedal.objects.raw.PdfArrayIterator;
@@ -187,19 +188,30 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	/**
-	 * Returns the real, zoom-independent height of the current page in PostScript
-	 * points.
-	 */
-	public int getPageHeight() {
-		return pdfDecoder.getPdfPageData().getMediaBoxHeight(getPage());
-	}
-
-	/**
 	 * Returns the real, zoom-independent width of the current page in PostScript
 	 * points.
 	 */
 	public int getPageWidth() {
-		return pdfDecoder.getPdfPageData().getMediaBoxWidth(getPage());
+		return getPageDimension(false);
+	}
+
+	/**
+	 * Returns the real, zoom-independent height of the current page in PostScript
+	 * points.
+	 */
+	public int getPageHeight() {
+		return getPageDimension(true);
+	}
+
+	private int getPageDimension(boolean height) {
+		PdfPageData pageData = pdfDecoder.getPdfPageData();
+		int page = getPage();
+		int rotation = pageData.getRotation(page);
+		if ((rotation == 90) || (rotation == 270)) {
+			return height ? pageData.getMediaBoxWidth(page) : pageData.getMediaBoxHeight(page);
+		} else {
+			return height ? pageData.getMediaBoxHeight(page) : pageData.getMediaBoxWidth(page);
+		}
 	}
 
 	/**
@@ -276,41 +288,43 @@ public class PdfViewPage extends ScrolledComposite {
 		AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
 		for (int page = 1; page <= getPageCount(); page++) {
 			PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
-			while (pdfAnnotations.hasMoreTokens()) {
-				String key = pdfAnnotations.getNextValueAsString(true);
-				Object rawObject = formRenderer.getFormDataAsObject(key);
-				if ((rawObject != null) && (rawObject instanceof FormObject)) {
-					FormObject formObject = (FormObject)rawObject;
-					int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
-					if (subtype == PdfDictionary.Link) {
-						PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
-						try {
-							byte[] uriDecodedBytes = anchor.getTextStreamValue(PdfDictionary.URI).getBytes("ISO-8859-1"); //$NON-NLS-1$
-							URI uri = new URI(new String(uriDecodedBytes));
-							if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
-								String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
-								String filename = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
-								IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(new URI("file", filename, null)); //$NON-NLS-1$
-								if (files.length > 0) {
-									PdfAnnotation annotation = new PdfAnnotation();
-									annotation.page = page;
-									annotation.file = files[0];
-									annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
-									annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
-									float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
-									annotation.left = rectangle[0];
-									annotation.bottom = rectangle[1];
-									annotation.right = rectangle[2];
-									annotation.top = rectangle[3];
-									annotations.add(annotation);
+			if (pdfAnnotations != null) {
+				while (pdfAnnotations.hasMoreTokens()) {
+					String key = pdfAnnotations.getNextValueAsString(true);
+					Object rawObject = formRenderer.getFormDataAsObject(key);
+					if ((rawObject != null) && (rawObject instanceof FormObject)) {
+						FormObject formObject = (FormObject)rawObject;
+						int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
+						if (subtype == PdfDictionary.Link) {
+							PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
+							try {
+								byte[] uriDecodedBytes = anchor.getTextStreamValue(PdfDictionary.URI).getBytes("ISO-8859-1"); //$NON-NLS-1$
+								URI uri = new URI(new String(uriDecodedBytes));
+								if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
+									String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
+									String filename = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
+									IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(new URI("file", filename, null)); //$NON-NLS-1$
+									if (files.length > 0) {
+										PdfAnnotation annotation = new PdfAnnotation();
+										annotation.page = page;
+										annotation.file = files[0];
+										annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
+										annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
+										float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
+										annotation.left = rectangle[0];
+										annotation.bottom = rectangle[1];
+										annotation.right = rectangle[2];
+										annotation.top = rectangle[3];
+										annotations.add(annotation);
+									}
 								}
+							} catch (URISyntaxException e) {
+								Activator.logError("Invalid annotation URI", e);
+							} catch (UnsupportedEncodingException e) {
+								Activator.logError("Programming error", e);
+							} catch (ArrayIndexOutOfBoundsException e) {
+								Activator.logError("Error while parsing annotation URI", e);
 							}
-						} catch (URISyntaxException e) {
-							Activator.logError("Invalid annotation URI", e);
-						} catch (UnsupportedEncodingException e) {
-							Activator.logError("Programming error", e);
-						} catch (ArrayIndexOutOfBoundsException e) {
-							Activator.logError("Error while parsing annotation URI", e);
 						}
 					}
 				}

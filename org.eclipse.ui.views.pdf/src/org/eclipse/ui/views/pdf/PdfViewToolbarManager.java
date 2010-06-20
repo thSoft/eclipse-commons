@@ -21,7 +21,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Scrollable;
 import org.eclipse.swt.widgets.Text;
 
 public class PdfViewToolbarManager {
@@ -311,20 +310,20 @@ public class PdfViewToolbarManager {
 
 			@Override
 			public void controlResized(ControlEvent e) {
-				Scrollable scrollable = getPage();
-				float widthRatio = 1;
+				PdfViewPage page = getPage();
+				float widthRatio = Float.MAX_VALUE;
 				if (fitToWidth) {
-					float imageWidth = scrollable.getClientArea().width - scrollable.getVerticalBar().getSize().x;
-					int pageWidth = getPage().getPageWidth();
+					float imageWidth = page.getClientArea().width - page.getVerticalBar().getSize().x;
+					int pageWidth = page.getPageWidth();
 					widthRatio = imageWidth / pageWidth;
 				}
-				float heightRatio = 1;
+				float heightRatio = Float.MAX_VALUE;
 				if (fitToHeight) {
-					float imageHeight = scrollable.getClientArea().height - scrollable.getHorizontalBar().getSize().y;
-					int pageHeight = getPage().getPageHeight();
+					float imageHeight = page.getClientArea().height - page.getHorizontalBar().getSize().y;
+					int pageHeight = page.getPageHeight();
 					heightRatio = imageHeight / pageHeight;
 				}
-				getPage().setZoom(Math.min(widthRatio, heightRatio));
+				page.setZoom(Math.min(widthRatio, heightRatio));
 			}
 
 		};
@@ -335,6 +334,9 @@ public class PdfViewToolbarManager {
 
 		public FitToAction(String tooltipTextFragment, String iconNameFragment, boolean fitToWidth, boolean fitToHeight) {
 			super(null, AS_RADIO_BUTTON);
+			if (!fitToWidth && !fitToHeight) {
+				throw new IllegalArgumentException("At least one dimension must be specified");
+			}
 			this.fitToWidth = fitToWidth;
 			this.fitToHeight = fitToHeight;
 			setToolTipText(MessageFormat.format("Fit To {0}", tooltipTextFragment));
@@ -343,16 +345,18 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public void setChecked(boolean checked) {
-			super.setChecked(checked);
-			PdfViewPage page = getPage();
-			if (checked) {
-				resizeListener.controlResized(null);
-				page.addControlListener(resizeListener);
-				page.setFitToAction(this); // Save special zoom setting
-			} else {
-				page.removeControlListener(resizeListener);
-				if (page.getFitToAction() == this) { // Clear special zoom setting
-					page.setFitToAction(null);
+			if (checked != isChecked()) {
+				super.setChecked(checked);
+				PdfViewPage page = getPage();
+				if (checked) {
+					resizeListener.controlResized(null);
+					page.addControlListener(resizeListener);
+					page.setFitToAction(this); // Save special zoom setting
+				} else {
+					page.removeControlListener(resizeListener);
+					if (page.getFitToAction() == this) { // Clear special zoom setting
+						page.setFitToAction(null);
+					}
 				}
 			}
 		}

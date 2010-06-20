@@ -12,6 +12,8 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	private final PdfViewToolbarManager toolbar = new PdfViewToolbarManager();
 
+	private PdfViewPage page;
+
 	@Override
 	public PdfViewPage createPage(PageBook pageBook, IFile file) throws Exception {
 		return new PdfViewPage(pageBook, file);
@@ -24,6 +26,7 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	@Override
 	public void pageShown(PdfViewPage page) {
+		setPage(page);
 		toolbar.setPage(page);
 		page.setToolbar(toolbar);
 		// Restore special zoom setting
@@ -37,6 +40,14 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 	@Override
 	public void reload(PdfViewPage page) throws Exception {
 		page.reload();
+	}
+
+	private void setPage(PdfViewPage page) {
+		this.page = page;
+	}
+
+	public PdfViewPage getPage() {
+		return page;
 	}
 
 }

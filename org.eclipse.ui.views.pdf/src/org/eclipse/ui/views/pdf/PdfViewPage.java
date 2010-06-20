@@ -1,7 +1,16 @@
+
 package org.eclipse.ui.views.pdf;
 
 import java.awt.image.BufferedImage;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Image;
@@ -11,11 +20,17 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.util.ImageUtils;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
+import org.jpedal.objects.acroforms.rendering.AcroRenderer;
+import org.jpedal.objects.raw.FormObject;
+import org.jpedal.objects.raw.PdfArrayIterator;
+import org.jpedal.objects.raw.PdfDictionary;
+import org.jpedal.objects.raw.PdfObject;
 
 public class PdfViewPage extends ScrolledComposite {
 
@@ -25,7 +40,7 @@ public class PdfViewPage extends ScrolledComposite {
 	private Composite outerContainer;
 
 	/**
-	 * The composite which contains the PDF display.
+	 * The composite which contains the PDF and the hyperlink layer.
 	 */
 	private Composite innerContainer;
 
@@ -33,16 +48,6 @@ public class PdfViewPage extends ScrolledComposite {
 	 * The label displaying the current page of the PDF file.
 	 */
 	private Label pdfDisplay;
-
-	/**
-	 * Manages the contributions to the toolbar.
-	 */
-	private PdfViewToolbarManager toolbar;
-
-	/**
-	 * The currently selected special zoom setting.
-	 */
-	private FitToAction fitToAction;
 
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.V_SCROLL | SWT.H_SCROLL);
@@ -63,8 +68,10 @@ public class PdfViewPage extends ScrolledComposite {
 
 		pdfDisplay = new Label(innerContainer, SWT.CENTER);
 
-		this.file = file;
+		hyperlinks = new Composite(innerContainer, SWT.TRANSPARENT | SWT.NO_BACKGROUND); // Both styles are required for correct transparency
+		hyperlinks.moveAbove(pdfDisplay);
 
+		this.file = file;
 		reload();
 	}
 
@@ -85,6 +92,7 @@ public class PdfViewPage extends ScrolledComposite {
 			} catch (PdfException e) {
 				Activator.logError("Can't redraw PDF page", e);
 			}
+			createHyperlinks();
 			refreshToolbar();
 		}
 	}
@@ -96,6 +104,7 @@ public class PdfViewPage extends ScrolledComposite {
 	private void refreshLayout() {
 		Point size = pdfDisplay.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 		pdfDisplay.setBounds(0, 0, size.x, size.y);
+		hyperlinks.setBounds(0, 0, size.x, size.y);
 		outerContainer.layout();
 		setMinSize(size);
 	}
@@ -111,6 +120,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 	public void setFile(IFile file) throws PdfException {
 		pdfDecoder.openPdfFile(file.getLocation().toOSString());
+		loadAnnotations();
 		if (file.equals(this.file)) {
 			setPage(getPage());
 		} else {
@@ -141,8 +151,8 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	public void setPage(int page) {
-		if (page > pdfDecoder.getPageCount()) {
-			this.page = pdfDecoder.getPageCount();
+		if (page > getPageCount()) {
+			this.page = getPageCount();
 		} else if (page < 1) {
 			this.page = 1;
 		} else {
@@ -202,6 +212,24 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 	}
 
+	/**
+	 * The currently selected special zoom setting.
+	 */
+	private FitToAction fitToAction;
+
+	public void setFitToAction(FitToAction fitToAction) {
+		this.fitToAction = fitToAction;
+	}
+
+	public FitToAction getFitToAction() {
+		return fitToAction;
+	}
+
+	/**
+	 * Manages the contributions to the toolbar.
+	 */
+	private PdfViewToolbarManager toolbar;
+
 	public void setToolbar(PdfViewToolbarManager toolbar) {
 		this.toolbar = toolbar;
 	}
@@ -216,12 +244,116 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 	}
 
-	public void setFitToAction(FitToAction fitToAction) {
-		this.fitToAction = fitToAction;
+	/**
+	 * The textedit annotations in the PDF file.
+	 */
+	private final List<PdfAnnotation> annotations = new ArrayList<PdfAnnotation>();
+
+	public PdfAnnotation[] getAnnotations() {
+		return annotations.toArray(new PdfAnnotation[0]);
 	}
 
-	public FitToAction getFitToAction() {
-		return fitToAction;
+	private void loadAnnotations() {
+		annotations.clear();
+		AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
+		for (int page = 1; page <= getPageCount(); page++) {
+			PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
+			while (pdfAnnotations.hasMoreTokens()) {
+				String key = pdfAnnotations.getNextValueAsString(true);
+				Object rawObject = formRenderer.getFormDataAsObject(key);
+				if ((rawObject != null) && (rawObject instanceof FormObject)) {
+					FormObject formObject = (FormObject)rawObject;
+					int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
+					if (subtype == PdfDictionary.Link) {
+						PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
+						try {
+							byte[] uriDecodedBytes = anchor.getTextStreamValue(PdfDictionary.URI).getBytes("ISO-8859-1"); //$NON-NLS-1$
+							URI uri = new URI(new String(uriDecodedBytes));
+							if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
+								String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
+								String filename = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
+								IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(new URI("file", filename, null)); //$NON-NLS-1$
+								if (files.length > 0) {
+									PdfAnnotation annotation = new PdfAnnotation();
+									annotation.page = page;
+									annotation.file = files[0];
+									annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
+									annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
+									float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
+									annotation.left = rectangle[0];
+									annotation.bottom = rectangle[1];
+									annotation.right = rectangle[2];
+									annotation.top = rectangle[3];
+									annotations.add(annotation);
+								}
+							}
+						} catch (URISyntaxException e) {
+							Activator.logError("Invalid annotation URI", e);
+						} catch (UnsupportedEncodingException e) {
+							Activator.logError("Programming error", e);
+						} catch (ArrayIndexOutOfBoundsException e) {
+							Activator.logError("Error while parsing annotation URI", e);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * The composite containing the point-and-click hyperlinks.
+	 */
+	private Composite hyperlinks;
+
+	/**
+	 * The annotation-to-hyperlink mappings.
+	 */
+	private final Map<PdfAnnotation, PdfAnnotationHyperlink> annotationHyperlinkMap = new HashMap<PdfAnnotation, PdfAnnotationHyperlink>();
+
+	/**
+	 * Creates point-and-click hyperlinks from the form annotations on the current
+	 * page.
+	 */
+	protected void createHyperlinks() {
+		for (Control oldHyperlink : hyperlinks.getChildren()) {
+			oldHyperlink.dispose();
+		}
+		annotationHyperlinkMap.clear();
+		for (PdfAnnotation annotation : annotations) {
+			if (annotation.page == getPage()) {
+				PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(hyperlinks, annotation);
+				annotationHyperlinkMap.put(annotation, hyperlink);
+				float zoom = getZoom();
+				float left = annotation.left * zoom;
+				float bottom = (getPageHeight() - annotation.bottom + 1) * zoom;
+				float right = annotation.right * zoom;
+				float top = (getPageHeight() - annotation.top + 1) * zoom;
+				float width = right - left;
+				float height = bottom - top;
+				hyperlink.setBounds(new Rectangle((int)left, (int)top, (int)width, (int)height));
+			}
+		}
+	}
+
+	/**
+	 * The currently highlighed annotation hyperlink.
+	 */
+	private PdfAnnotationHyperlink highlightedHyperlink;
+
+	/**
+	 * Reveals and highlights the hyperlink of the given annotation.
+	 */
+	public void highlightAnnotation(PdfAnnotation annotation) {
+		if (highlightedHyperlink != null) {
+			// TODO de-highlight
+		}
+		setPage(annotation.page);
+		PdfAnnotationHyperlink hyperlink = annotationHyperlinkMap.get(annotation);
+		if (hyperlink != null) {
+			highlightedHyperlink = hyperlink;
+			// TODO scroll to make it visible
+			// TODO highlight
+		}
 	}
 
 }

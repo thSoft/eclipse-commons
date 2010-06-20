@@ -84,7 +84,7 @@ public class FileView extends ViewPart {
 				try {
 					Object type = configurationElement.createExecutableExtension("type"); //$NON-NLS-1$
 					if (type instanceof IFileViewType) {
-						this.type = (IFileViewType<? super Composite>)type;
+						this.setType((IFileViewType<? super Composite>)type);
 					}
 				} catch (CoreException e) {
 					Activator.logError("Can't initialize file view type", e);
@@ -111,7 +111,7 @@ public class FileView extends ViewPart {
 									String imageFilePath = sourceConfigurationElement.getAttribute("icon"); //$NON-NLS-1$
 									sourceDescriptor.icon = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imageFilePath);
 									// Toolbar contributions
-									toolbarContributions = type.getToolbarContributions();
+									toolbarContributions = getType().getToolbarContributions();
 								}
 							} catch (CoreException e) {
 								Activator.logError("Can't instantiate file view source", e);
@@ -205,7 +205,7 @@ public class FileView extends ViewPart {
 	private void load(IFile file) {
 		Composite page = null;
 		try {
-			page = type.createPage(pageBook, file);
+			page = getType().createPage(pageBook, file);
 		} catch (Exception e) {
 			Activator.logError("Can't create file view page", e);
 		}
@@ -219,7 +219,7 @@ public class FileView extends ViewPart {
 				pageBook.showPage(errorPage);
 			} else {
 				pageBook.showPage(page);
-				type.pageShown(page);
+				getType().pageShown(page);
 			}
 		}
 		refreshToolbarContributions();
@@ -242,7 +242,7 @@ public class FileView extends ViewPart {
 			load(file);
 		} else {
 			try {
-				type.reload(oldPage);
+				getType().reload(oldPage);
 			} catch (Exception e) {
 				Activator.logError("Error while reloading file", e);
 				pages.put(file, null);
@@ -290,6 +290,14 @@ public class FileView extends ViewPart {
 
 	public FileViewSourceDescriptor[] getSourceDescriptors() {
 		return sourceDescriptors.toArray(new FileViewSourceDescriptor[0]);
+	}
+
+	private void setType(IFileViewType<? super Composite> type) {
+		this.type = type;
+	}
+
+	public IFileViewType<? super Composite> getType() {
+		return type;
 	}
 
 }

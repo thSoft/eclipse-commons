@@ -1,5 +1,6 @@
 package org.eclipse.ui.views.pdf;
 
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -206,12 +207,19 @@ public class PdfViewPage extends ScrolledComposite {
 	private int getPageDimension(boolean height) {
 		PdfPageData pageData = pdfDecoder.getPdfPageData();
 		int page = getPage();
-		int rotation = pageData.getRotation(page);
+		int rotation = getPageRotation();
 		if ((rotation == 90) || (rotation == 270)) {
 			return height ? pageData.getMediaBoxWidth(page) : pageData.getMediaBoxHeight(page);
 		} else {
 			return height ? pageData.getMediaBoxHeight(page) : pageData.getMediaBoxWidth(page);
 		}
+	}
+
+	/**
+	 * Returns the rotation of the page in degrees.
+	 */
+	public int getPageRotation() {
+		return pdfDecoder.getPdfPageData().getRotation(getPage());
 	}
 
 	/**
@@ -357,13 +365,44 @@ public class PdfViewPage extends ScrolledComposite {
 				annotationHyperlinkMap.put(annotation, hyperlink);
 				float zoom = getZoom();
 				float left = annotation.left * zoom;
-				float bottom = (getPageHeight() - annotation.bottom) * zoom;
 				float right = annotation.right * zoom;
-				float top = (getPageHeight() - annotation.top) * zoom;
-				float width = right - left;
-				float height = bottom - top;
-				hyperlink.setBounds(new Rectangle((int)left, (int)top, (int)width, (int)height));
+				float width = Math.abs(right - left);
+				float top = annotation.top * zoom;
+				float bottom = annotation.bottom * zoom;
+				float height = Math.abs(bottom - top);
+				Rectangle2D.Float bounds = new Rectangle2D.Float(left, top, width, height);
+				float pageWidth = getPageWidth() * zoom;
+				float pageHeight = getPageHeight() * zoom;
+				transform(bounds, getPageRotation(), pageWidth, pageHeight);
+				hyperlink.setBounds((int)bounds.x, (int)bounds.y, (int)bounds.width, (int)bounds.height);
 			}
+		}
+	}
+
+	private void transform(Rectangle2D.Float rectangle, int rotation, float pageWidth, float pageHeight) {
+		float x = rectangle.x;
+		float y = rectangle.y;
+		float width = rectangle.width;
+		float height = rectangle.height;
+		switch (rotation) {
+		case 0:
+			rectangle.y = pageHeight - y;
+			break;
+		case 90:
+			rectangle.x = y - height;
+			rectangle.y = x - width;
+			rectangle.width = height;
+			rectangle.height = width;
+			break;
+		case 180:
+			rectangle.x = pageWidth - x - width;
+			break;
+		case 270:
+			rectangle.x = pageHeight - y;
+			rectangle.y = x - width;
+			rectangle.width = height;
+			rectangle.height = width;
+			break;
 		}
 	}
 

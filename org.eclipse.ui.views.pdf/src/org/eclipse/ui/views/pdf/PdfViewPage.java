@@ -58,6 +58,7 @@ public class PdfViewPage extends ScrolledComposite {
 		setExpandVertical(true);
 		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
 		getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
+		setShowFocusedControl(true);
 
 		outerContainer = new Composite(this, SWT.NONE);
 		GridLayout layout = new GridLayout();
@@ -73,23 +74,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 		hyperlinks = new Composite(innerContainer, SWT.TRANSPARENT | SWT.NO_BACKGROUND); // Both styles are required for correct transparency
 		hyperlinks.moveAbove(pdfDisplay);
-		hyperlinks.addPaintListener(new PaintListener() {
-
-			@Override
-			public void paintControl(PaintEvent e) {
-				if ((highlightedHyperlink != null) && !highlightedHyperlink.isDisposed()) {
-					e.gc.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLUE));
-					Rectangle bounds = highlightedHyperlink.getBounds();
-					float borderWidth = HYPERLINK_HIGHLIGHT_BORDER_WIDTH * getZoom();
-					float x = bounds.x - borderWidth;
-					float y = bounds.y - borderWidth;
-					float width = bounds.width + 2 * borderWidth;
-					float height = bounds.height + 2 * borderWidth;
-					e.gc.drawRoundRectangle((int)x, (int)y, (int)width, (int)height, (int)borderWidth, (int)borderWidth);
-				}
-			}
-
-		});
+		hyperlinks.addPaintListener(new HyperlinkHighlightPaintListener());
 
 		this.file = file;
 		reload();
@@ -411,7 +396,10 @@ public class PdfViewPage extends ScrolledComposite {
 	 */
 	private PdfAnnotationHyperlink highlightedHyperlink;
 
-	private static final float HYPERLINK_HIGHLIGHT_BORDER_WIDTH = 2.5f;
+	/**
+	 * The space between the highlighted hyperlink and its outline.
+	 */
+	private static final float HYPERLINK_HIGHLIGHT_PADDING = 3;
 
 	/**
 	 * Reveals and highlights the hyperlink of the given annotation.
@@ -420,9 +408,143 @@ public class PdfViewPage extends ScrolledComposite {
 		setPage(annotation.page);
 		PdfAnnotationHyperlink hyperlink = annotationHyperlinkMap.get(annotation);
 		if (hyperlink != null) {
-			// TODO scroll to make it visible
-			highlightedHyperlink = hyperlink; // TODO fade in and out?
+			highlightedHyperlink = hyperlink;
+			hyperlink.setFocus();
+			Display.getDefault().timerExec(0, new HyperlinkHighlightAnimator());
 		}
+	}
+
+	private static int hyperlinkHighlightAlpha;
+
+	private static float hyperlinkHighlightPaddingScale;
+
+	private class HyperlinkHighlightPaintListener implements PaintListener {
+
+		@Override
+		public void paintControl(PaintEvent e) {
+			if ((highlightedHyperlink != null) && !highlightedHyperlink.isDisposed()) {
+				e.gc.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLUE));
+				e.gc.setLineWidth(2);
+				Rectangle bounds = highlightedHyperlink.getBounds();
+				float padding = HYPERLINK_HIGHLIGHT_PADDING * getZoom() * hyperlinkHighlightPaddingScale;
+				float x = bounds.x - padding;
+				float y = bounds.y - padding;
+				float width = bounds.width + 2 * padding;
+				float height = bounds.height + 2 * padding;
+				e.gc.setAlpha(hyperlinkHighlightAlpha);
+				e.gc.drawRoundRectangle((int)x, (int)y, (int)width, (int)height, (int)padding, (int)padding);
+			}
+		}
+
+	}
+
+	private enum State {
+		FADE_IN {
+
+			private final int MAX_ALPHA = 255;
+
+			private final int ALPHA_STEP = 24;
+
+			private final float INITIAL_PADDING_SCALE = 5;
+
+			@Override
+			public void init() {
+				hyperlinkHighlightAlpha = 0;
+				hyperlinkHighlightPaddingScale = INITIAL_PADDING_SCALE;
+			}
+
+			@Override
+			public void step() {
+				hyperlinkHighlightAlpha = Math.min(MAX_ALPHA, hyperlinkHighlightAlpha + ALPHA_STEP);
+				hyperlinkHighlightPaddingScale -= (INITIAL_PADDING_SCALE - 1) / (MAX_ALPHA / ALPHA_STEP);
+			}
+
+			@Override
+			public boolean isReady() {
+				return hyperlinkHighlightAlpha >= MAX_ALPHA;
+			}
+
+		},
+		WAIT {
+
+			private int delay;
+
+			@Override
+			public void init() {
+				delay = 128;
+			}
+
+			@Override
+			public void step() {
+				delay--;
+			}
+
+			@Override
+			public boolean isReady() {
+				return delay == 0;
+			}
+		},
+		FADE_OUT {
+
+			private final int ALPHA_STEP = 4;
+
+			@Override
+			public void init() {
+			}
+
+			@Override
+			public void step() {
+				hyperlinkHighlightAlpha = Math.max(0, hyperlinkHighlightAlpha - ALPHA_STEP);
+			}
+
+			@Override
+			public boolean isReady() {
+				return hyperlinkHighlightAlpha == 0;
+			}
+
+		};
+
+		public abstract void init();
+
+		public abstract void step();
+
+		public abstract boolean isReady();
+
+	}
+
+	private class HyperlinkHighlightAnimator implements Runnable {
+
+		private int stateIndex;
+
+		private final State[] states = State.values();
+
+		public HyperlinkHighlightAnimator() {
+			stateIndex = 0;
+			initState();
+		}
+
+		private void initState() {
+			states[stateIndex].init();
+		}
+
+		@Override
+		public void run() {
+			State state = states[stateIndex];
+			if (!state.isReady()) {
+				state.step();
+				hyperlinks.redraw();
+			} else {
+				if (stateIndex < states.length - 1) {
+					stateIndex++;
+					initState();
+				} else {
+					highlightedHyperlink = null;
+					return;
+				}
+			}
+			Display.getDefault().timerExec(1, this);
+		}
+
 	}
 
 }

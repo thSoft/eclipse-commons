@@ -11,6 +11,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IViewReference;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.util.UiUtils;
 
 /**
@@ -30,13 +31,16 @@ public class ViewedFileChangeListener implements IResourceChangeListener {
 
 					@Override
 					public void run() {
-						for (IViewReference viewReference : UiUtils.getWorkbenchPage().getViewReferences()) {
-							IViewPart view = viewReference.getView(false);
-							if (view instanceof FileView) {
-								FileView fileView = (FileView)view;
-								IFile file = (IFile)resource;
-								if (Arrays.asList(fileView.getExtensions()).contains(file.getFileExtension())) {
-									fileView.reload(file);
+						IWorkbenchPage workbenchPage = UiUtils.getWorkbenchPage();
+						if (workbenchPage != null) {
+							for (IViewReference viewReference : workbenchPage.getViewReferences()) {
+								IViewPart view = viewReference.getView(false);
+								if (view instanceof FileView) {
+									FileView fileView = (FileView)view;
+									IFile file = (IFile)resource;
+									if (Arrays.asList(fileView.getExtensions()).contains(file.getFileExtension())) {
+										fileView.reload(file);
+									}
 								}
 							}
 						}

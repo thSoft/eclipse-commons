@@ -478,7 +478,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 			@Override
 			public void init() {
-				delay = 128;
+				delay = 192;
 			}
 
 			@Override
@@ -493,7 +493,7 @@ public class PdfViewPage extends ScrolledComposite {
 		},
 		FADE_OUT {
 
-			private final int ALPHA_STEP = 4;
+			private final int ALPHA_STEP = 2;
 
 			@Override
 			public void init() {

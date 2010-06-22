@@ -47,11 +47,6 @@ public class PdfViewPage extends ScrolledComposite {
 	 */
 	private Composite innerContainer;
 
-	/**
-	 * The label displaying the current page of the PDF file.
-	 */
-	private Label pdfDisplay;
-
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.V_SCROLL | SWT.H_SCROLL);
 		setExpandHorizontal(true);
@@ -80,6 +75,13 @@ public class PdfViewPage extends ScrolledComposite {
 		reload();
 	}
 
+	// Rendering
+
+	/**
+	 * The label displaying the current page of the PDF file.
+	 */
+	private Label pdfDisplay;
+
 	/**
 	 * The PDF engine which renders the pages.
 	 */
@@ -93,7 +95,11 @@ public class PdfViewPage extends ScrolledComposite {
 				BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
 				Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
 				pdfDisplay.setImage(swtImage);
-				refreshLayout();
+				Point size = pdfDisplay.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+				pdfDisplay.setBounds(0, 0, size.x, size.y);
+				hyperlinks.setBounds(0, 0, size.x, size.y);
+				outerContainer.layout();
+				setMinSize(size);
 			} catch (PdfException e) {
 				Activator.logError("Can't redraw PDF page", e);
 			}
@@ -102,17 +108,7 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 	}
 
-	/**
-	 * Whenever the page size changes, this method has to be called to achieve the
-	 * correct layout.
-	 */
-	private void refreshLayout() {
-		Point size = pdfDisplay.computeSize(SWT.DEFAULT, SWT.DEFAULT);
-		pdfDisplay.setBounds(0, 0, size.x, size.y);
-		hyperlinks.setBounds(0, 0, size.x, size.y);
-		outerContainer.layout();
-		setMinSize(size);
-	}
+	// File handling
 
 	/**
 	 * The open PDF file.
@@ -138,13 +134,11 @@ public class PdfViewPage extends ScrolledComposite {
 		setFile(getFile());
 	}
 
-	public void closeFile() {
-		pdfDecoder.closePdfFile();
-	}
-
 	public boolean isFileOpen() {
 		return pdfDecoder.isOpen();
 	}
+
+	// Navigation
 
 	/**
 	 * The number of the currently viewed page, 1-based.
@@ -172,6 +166,8 @@ public class PdfViewPage extends ScrolledComposite {
 	public int getPageCount() {
 		return pdfDecoder.getPageCount();
 	}
+
+	// Page info
 
 	/**
 	 * Returns the real, zoom-independent width of the current page in PostScript
@@ -206,6 +202,8 @@ public class PdfViewPage extends ScrolledComposite {
 	public int getPageRotation() {
 		return pdfDecoder.getPdfPageData().getRotation(getPage());
 	}
+
+	// Zoom
 
 	/**
 	 * The current zoom factor.
@@ -248,6 +246,8 @@ public class PdfViewPage extends ScrolledComposite {
 		return fitToAction;
 	}
 
+	// Toolbar
+
 	/**
 	 * Manages the contributions to the toolbar.
 	 */
@@ -266,6 +266,8 @@ public class PdfViewPage extends ScrolledComposite {
 			getToolbar().refresh();
 		}
 	}
+
+	// Annotations
 
 	/**
 	 * The textedit annotations in the PDF file.
@@ -324,6 +326,8 @@ public class PdfViewPage extends ScrolledComposite {
 			}
 		}
 	}
+
+	// Hyperlinks
 
 	/**
 	 * The composite containing the point-and-click hyperlinks.
@@ -391,6 +395,9 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 	}
 
+	// Hyperlink highlighting
+	// TODO extract
+
 	/**
 	 * The currently highlighted hyperlink.
 	 */
@@ -410,7 +417,7 @@ public class PdfViewPage extends ScrolledComposite {
 		if (hyperlink != null) {
 			highlightedHyperlink = hyperlink;
 			hyperlink.setFocus();
-			Display.getDefault().timerExec(0, new HyperlinkHighlightAnimator());
+			hyperlinkHighlightAnimator.start();
 		}
 	}
 
@@ -438,7 +445,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 	}
 
-	private enum State {
+	private enum HyperlinkHighlightAnimatorState {
 		FADE_IN {
 
 			private final int MAX_ALPHA = 255;
@@ -512,15 +519,18 @@ public class PdfViewPage extends ScrolledComposite {
 
 	}
 
+	private final HyperlinkHighlightAnimator hyperlinkHighlightAnimator = new HyperlinkHighlightAnimator();
+
 	private class HyperlinkHighlightAnimator implements Runnable {
 
 		private int stateIndex;
 
-		private final State[] states = State.values();
+		private final HyperlinkHighlightAnimatorState[] states = HyperlinkHighlightAnimatorState.values();
 
-		public HyperlinkHighlightAnimator() {
+		public void start() {
 			stateIndex = 0;
 			initState();
+			Display.getDefault().timerExec(0, this);
 		}
 
 		private void initState() {
@@ -529,7 +539,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 		@Override
 		public void run() {
-			State state = states[stateIndex];
+			HyperlinkHighlightAnimatorState state = states[stateIndex];
 			if (!state.isReady()) {
 				state.step();
 				hyperlinks.redraw();

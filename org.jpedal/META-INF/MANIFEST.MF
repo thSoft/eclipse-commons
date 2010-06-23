@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: JPedal
 Bundle-SymbolicName: org.jpedal
 Bundle-Version: 4.21.56
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Vendor: IDRsolutions
 Export-Package: com.idrsolutions.pdf.acroforms.xfa,
  com.l2fprod.common,
@@ -84,5 +84,6 @@ Export-Package: com.idrsolutions.pdf.acroforms.xfa,
  org.jpedal.render,
  org.jpedal.storypad,
  org.jpedal.sun,
- org.jpedal.utils
+ org.jpedal.utils,
+ org.jpedal.utils.repositories
 Bundle-ClassPath: jpedal_lgpl.jar

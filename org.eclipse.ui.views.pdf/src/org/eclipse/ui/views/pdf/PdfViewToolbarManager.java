@@ -68,68 +68,77 @@ public class PdfViewToolbarManager {
 
 	private static final String ID_PREFIX = ".toolbars."; //$NON-NLS-1$
 
-	public class FirstPageAction extends Action {
+	// Navigation
+
+	public abstract class NavigateAction extends Action {
+
+		public NavigateAction(String tooltipTextFragment, String iconNameFragment) {
+			setToolTipText(MessageFormat.format("Go To {0} Page", tooltipTextFragment));
+			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + MessageFormat.format("{0}Page.png", iconNameFragment))); //$NON-NLS-1$
+		}
+
+		@Override
+		public void run() {
+			getPage().setPage(getNewPage());
+		}
+
+		protected abstract int getNewPage();
+
+		@Override
+		public boolean isEnabled() {
+			return getPage().isPageValid(getNewPage());
+		}
+
+	}
+
+	public class FirstPageAction extends NavigateAction {
 
 		public FirstPageAction() {
-			setToolTipText("Go To First Page");
-			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + "FirstPage.png")); //$NON-NLS-1$
+			super("First", "First"); //$NON-NLS-2$
 		}
 
 		@Override
-		public void run() {
-			getPage().setPage(1);
+		protected int getNewPage() {
+			return 1;
 		}
 
 	}
 
-	public class PreviousPageAction extends Action {
+	public class PreviousPageAction extends NavigateAction {
 
 		public PreviousPageAction() {
-			setToolTipText("Go To Previous Page");
-			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + "PreviousPage.png")); //$NON-NLS-1$
+			super("Previous", "Previous"); //$NON-NLS-2$
 		}
 
 		@Override
-		public void run() {
-			getPage().setPage(getPage().getPage() - 1);
-		}
-
-		@Override
-		public boolean isEnabled() {
-			return getPage().getPage() > 1;
+		protected int getNewPage() {
+			return getPage().getPage() - 1;
 		}
 
 	}
 
-	public class NextPageAction extends Action {
+	public class NextPageAction extends NavigateAction {
 
 		public NextPageAction() {
-			setToolTipText("Go To Next Page");
-			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + "NextPage.png")); //$NON-NLS-1$
+			super("Next", "Next"); //$NON-NLS-2$
 		}
 
 		@Override
-		public void run() {
-			getPage().setPage(getPage().getPage() + 1);
-		}
-
-		@Override
-		public boolean isEnabled() {
-			return getPage().getPage() < getPage().getPageCount();
+		protected int getNewPage() {
+			return getPage().getPage() + 1;
 		}
 
 	}
 
-	public class LastPageAction extends Action {
+	public class LastPageAction extends NavigateAction {
 
 		public LastPageAction() {
-			setToolTipText("Go To Last Page");
-			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + "LastPage.png")); //$NON-NLS-1$
+			super("Last", "Last"); //$NON-NLS-2$
 		}
 
 		@Override
-		public void run() {
-			getPage().setPage(getPage().getPageCount());
+		protected int getNewPage() {
+			return getPage().getPageCount();
 		}
 
 	}
@@ -229,74 +238,72 @@ public class PdfViewToolbarManager {
 
 	}
 
+	// Zoom
+
 	protected static final float ZOOM_STEP = 0.25f;
 
-	protected static final float ZOOM_IN_FACTOR = 1 + ZOOM_STEP;
+	public abstract class ZoomAction extends Action {
 
-	protected static final float ZOOM_OUT_FACTOR = 1 - ZOOM_STEP;
+		public ZoomAction(String tooltipTextFragment, String iconNameFragment) {
+			setToolTipText(MessageFormat.format("Zoom {0}", tooltipTextFragment));
+			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + MessageFormat.format("Zoom{0}.png", iconNameFragment))); //$NON-NLS-1$
+		}
 
-	public class ZoomOutAction extends Action {
+		@Override
+		public void run() {
+			disableFit();
+			getPage().setZoom(getNewZoom());
+		}
+
+		protected abstract float getNewZoom();
+
+		@Override
+		public boolean isEnabled() {
+			return getPage().isZoomValid(getNewZoom());
+		}
+
+	}
+
+	public class ZoomOutAction extends ZoomAction {
 
 		public ZoomOutAction() {
-			setToolTipText("Zoom Out");
-			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + "ZoomOut.png")); //$NON-NLS-1$
+			super("Out", "Out"); //$NON-NLS-2$
 		}
 
 		@Override
-		public void run() {
-			disableFit();
-			getPage().setZoom(getNewZoom());
-		}
-
-		private float getNewZoom() {
-			return getPage().getZoom() * ZOOM_OUT_FACTOR;
-		}
-
-		@Override
-		public boolean isEnabled() {
-			return getPage().isZoomValid(getNewZoom());
+		protected float getNewZoom() {
+			return getPage().getZoom() * (1 - ZOOM_STEP);
 		}
 
 	}
 
-	public class ZoomInAction extends Action {
+	public class ZoomInAction extends ZoomAction {
 
 		public ZoomInAction() {
-			setToolTipText("Zoom In");
-			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + "ZoomIn.png")); //$NON-NLS-1$
+			super("In", "In"); //$NON-NLS-2$
 		}
 
 		@Override
-		public void run() {
-			disableFit();
-			getPage().setZoom(getNewZoom());
-		}
-
-		private float getNewZoom() {
-			return getPage().getZoom() * ZOOM_IN_FACTOR;
-		}
-
-		@Override
-		public boolean isEnabled() {
-			return getPage().isZoomValid(getNewZoom());
+		protected float getNewZoom() {
+			return getPage().getZoom() * (1 + ZOOM_STEP);
 		}
 
 	}
 
-	public class ZoomToActualSizeAction extends Action {
+	public class ZoomToActualSizeAction extends ZoomAction {
 
 		public ZoomToActualSizeAction() {
-			setToolTipText("Zoom To Actual Size");
-			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + "ZoomToActualSize.png")); //$NON-NLS-1$
+			super("To Actual Size", "ToActualSize"); //$NON-NLS-2$
 		}
 
 		@Override
-		public void run() {
-			disableFit();
-			getPage().setZoom(1);
+		protected float getNewZoom() {
+			return 1;
 		}
 
 	}
+
+	// Zoom to fit
 
 	public void disableFit() {
 		fitToPageAction.setChecked(false);

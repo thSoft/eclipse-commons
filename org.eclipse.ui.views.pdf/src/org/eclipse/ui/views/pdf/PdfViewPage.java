@@ -167,6 +167,13 @@ public class PdfViewPage extends ScrolledComposite {
 		return pdfDecoder.getPageCount();
 	}
 
+	/**
+	 * Checks whether the page with the given number exists.
+	 */
+	public boolean isPageValid(int page) {
+		return ((page >= 1) && (page <= getPageCount()));
+	}
+
 	// Page info
 
 	/**

@@ -342,7 +342,7 @@ public class PdfViewToolbarManager {
 		public FitToAction(String tooltipTextFragment, String iconNameFragment, boolean fitToWidth, boolean fitToHeight) {
 			super(null, AS_RADIO_BUTTON);
 			if (!fitToWidth && !fitToHeight) {
-				throw new IllegalArgumentException("At least one dimension must be specified");
+				throw new IllegalArgumentException("At least one dimension must be specified"); //$NON-NLS-1$
 			}
 			this.fitToWidth = fitToWidth;
 			this.fitToHeight = fitToHeight;

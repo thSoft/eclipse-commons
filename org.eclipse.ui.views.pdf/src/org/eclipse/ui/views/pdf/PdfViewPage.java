@@ -16,7 +16,6 @@ import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -93,13 +92,18 @@ public class PdfViewPage extends ScrolledComposite {
 			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
 				BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
+				Image oldImage = pdfDisplay.getImage();
+				if (oldImage != null) {
+					oldImage.dispose();
+				}
 				Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
 				pdfDisplay.setImage(swtImage);
-				Point size = pdfDisplay.computeSize(SWT.DEFAULT, SWT.DEFAULT);
-				pdfDisplay.setBounds(0, 0, size.x, size.y);
-				hyperlinks.setBounds(0, 0, size.x, size.y);
+				int width = awtImage.getWidth();
+				int height = awtImage.getHeight();
+				pdfDisplay.setBounds(0, 0, width, height);
+				hyperlinks.setBounds(0, 0, width, height);
 				outerContainer.layout();
-				setMinSize(size);
+				setMinSize(width, height);
 			} catch (PdfException e) {
 				Activator.logError("Can't redraw PDF page", e);
 			}

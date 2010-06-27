@@ -31,4 +31,9 @@ public interface IFileViewType<P extends Composite> {
 	 */
 	void reload(P page) throws Exception;
 
+	/**
+	 * Called before the given page is closed.
+	 */
+	void pageClosed(P page);
+
 }

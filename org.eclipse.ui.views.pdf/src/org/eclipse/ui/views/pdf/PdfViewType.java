@@ -10,14 +10,22 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	public static final String EXTENSION = "pdf"; //$NON-NLS-1$
 
-	private final PdfViewToolbarManager toolbar = new PdfViewToolbarManager();
-
 	private PdfViewPage page;
+
+	private void setPage(PdfViewPage page) {
+		this.page = page;
+	}
+
+	public PdfViewPage getPage() {
+		return page;
+	}
 
 	@Override
 	public PdfViewPage createPage(PageBook pageBook, IFile file) throws Exception {
 		return new PdfViewPage(pageBook, file);
 	}
+
+	private final PdfViewToolbarManager toolbar = new PdfViewToolbarManager();
 
 	@Override
 	public IContributionItem[] getToolbarContributions() {
@@ -42,12 +50,9 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 		page.reload();
 	}
 
-	private void setPage(PdfViewPage page) {
-		this.page = page;
-	}
-
-	public PdfViewPage getPage() {
-		return page;
+	@Override
+	public void pageClosed(PdfViewPage page) {
+		page.closeFile();
 	}
 
 }

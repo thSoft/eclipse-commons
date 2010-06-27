@@ -142,6 +142,10 @@ public class PdfViewPage extends ScrolledComposite {
 		return pdfDecoder.isOpen();
 	}
 
+	public void closeFile() {
+		pdfDecoder.closePdfFile();
+	}
+
 	// Navigation
 
 	/**

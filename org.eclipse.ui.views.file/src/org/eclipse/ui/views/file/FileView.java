@@ -168,6 +168,14 @@ public class FileView extends ViewPart {
 		}
 	}
 
+	@Override
+	public void dispose() {
+		for (Composite page : pages.values()) {
+			getType().pageClosed(page);
+		}
+		super.dispose();
+	}
+
 	public String[] getExtensions() {
 		return extensions.toArray(new String[0]);
 	}

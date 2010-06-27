@@ -28,4 +28,10 @@ public class MidiViewType implements IFileViewType<MidiViewPage> {
 		// TODO Auto-generated method stub
 	}
 
+	@Override
+	public void pageClosed(MidiViewPage page) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

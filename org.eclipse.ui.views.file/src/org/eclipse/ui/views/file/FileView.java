@@ -149,7 +149,7 @@ public class FileView extends ViewPart {
 		// Page book
 		pageBook = new PageBook(parent, SWT.NONE);
 		// Error page
-		this.errorPage = new ErrorPage(pageBook, errorMessage);
+		errorPage = new ErrorPage(pageBook, errorMessage);
 		// Activate source
 		if (getSourceDescriptor() != null) {
 			getSourceDescriptor().source.init(this, true);
@@ -197,16 +197,16 @@ public class FileView extends ViewPart {
 				load(file);
 			}
 			refresh();
-		}
-		// Fill toolbar for the first time
-		if (!toolbarFilled) {
-			toolbarFilled = true;
-			String sourceMenuId = sourceMenu.getId();
-			for (IContributionItem toolbarContribution : toolbarContributions) {
-				toolbar.insertBefore(sourceMenuId, toolbarContribution);
+			// Fill toolbar for the first time
+			if (!toolbarFilled) {
+				toolbarFilled = true;
+				String sourceMenuId = sourceMenu.getId();
+				for (IContributionItem toolbarContribution : toolbarContributions) {
+					toolbar.insertBefore(sourceMenuId, toolbarContribution);
+				}
+				toolbar.insertBefore(sourceMenuId, new Separator());
+				toolbar.update(true);
 			}
-			toolbar.insertBefore(sourceMenuId, new Separator());
-			toolbar.update(true);
 		}
 	}
 

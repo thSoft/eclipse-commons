@@ -171,7 +171,9 @@ public class FileView extends ViewPart {
 	@Override
 	public void dispose() {
 		for (Composite page : pages.values()) {
-			getType().pageClosed(page);
+			if (page != null) {
+				getType().pageClosed(page);
+			}
 		}
 		super.dispose();
 	}

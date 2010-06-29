@@ -17,13 +17,10 @@ import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.util.ImageUtils;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
@@ -36,39 +33,16 @@ import org.jpedal.objects.raw.PdfObject;
 
 public class PdfViewPage extends ScrolledComposite {
 
-	/**
-	 * The composite which is responsible for the center alignment.
-	 */
-	private Composite outerContainer;
-
-	/**
-	 * The composite which contains the PDF and the hyperlink layer.
-	 */
-	private Composite innerContainer;
-
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
-		super(parent, SWT.V_SCROLL | SWT.H_SCROLL);
-		setExpandHorizontal(true);
-		setExpandVertical(true);
-		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
+		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
+		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
 		setShowFocusedControl(true);
 
-		outerContainer = new Composite(this, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.marginWidth = 0;
-		layout.marginHeight = 0;
-		outerContainer.setLayout(layout);
-		setContent(outerContainer);
-
-		innerContainer = new Composite(outerContainer, SWT.NONE);
-		innerContainer.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
-
-		pdfDisplay = new Label(innerContainer, SWT.CENTER);
-
-		hyperlinks = new Composite(innerContainer, SWT.TRANSPARENT | SWT.NO_BACKGROUND); // Both styles are required for correct transparency
-		hyperlinks.moveAbove(pdfDisplay);
-		hyperlinks.addPaintListener(new HyperlinkHighlightPaintListener());
+		pdfDisplay = new Composite(this, SWT.NONE);
+		pdfDisplay.setBackgroundMode(SWT.INHERIT_FORCE);
+		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
+		setContent(pdfDisplay);
 
 		this.file = file;
 		reload();
@@ -79,7 +53,7 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The label displaying the current page of the PDF file.
 	 */
-	private Label pdfDisplay;
+	private Composite pdfDisplay;
 
 	/**
 	 * The PDF engine which renders the pages.
@@ -92,18 +66,18 @@ public class PdfViewPage extends ScrolledComposite {
 			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
 				BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
-				Image oldImage = pdfDisplay.getImage();
+				Image oldImage = pdfDisplay.getBackgroundImage();
 				if (oldImage != null) {
 					oldImage.dispose();
 				}
 				Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
-				pdfDisplay.setImage(swtImage);
+				pdfDisplay.setBackgroundImage(swtImage);
 				int width = awtImage.getWidth();
 				int height = awtImage.getHeight();
-				pdfDisplay.setBounds(0, 0, width, height);
-				hyperlinks.setBounds(0, 0, width, height);
-				outerContainer.layout();
-				setMinSize(width, height);
+				pdfDisplay.setSize(width, height);
+				int left = Math.max(0, getClientArea().width / 2 - width / 2);
+				int top = Math.max(0, getClientArea().height / 2 - height / 2);
+				pdfDisplay.setLocation(left, top);
 			} catch (PdfException e) {
 				Activator.logError("Can't redraw PDF page", e);
 			}
@@ -229,6 +203,15 @@ public class PdfViewPage extends ScrolledComposite {
 		return zoom;
 	}
 
+	public void setZoom(float zoom) {
+		if (isZoomValid(zoom)) {
+			this.zoom = zoom;
+			redraw();
+		}
+	}
+
+	public static final float MIN_SIZE = 16;
+
 	/**
 	 * Checks whether the given zoom factor is in a sensible range.
 	 */
@@ -237,15 +220,8 @@ public class PdfViewPage extends ScrolledComposite {
 		float newWidth = getPageWidth() * zoom;
 		float newHeight = getPageHeight() * zoom;
 		boolean tooBig = newWidth > screenSize.width;
-		boolean tooSmall = (newWidth < 1) || (newHeight < 1);
+		boolean tooSmall = (newWidth < MIN_SIZE) || (newHeight < MIN_SIZE);
 		return !(tooBig || tooSmall);
-	}
-
-	public void setZoom(float zoom) {
-		if (isZoomValid(zoom)) {
-			this.zoom = zoom;
-			redraw();
-		}
 	}
 
 	/**
@@ -253,12 +229,12 @@ public class PdfViewPage extends ScrolledComposite {
 	 */
 	private FitToAction fitToAction;
 
-	public void setFitToAction(FitToAction fitToAction) {
-		this.fitToAction = fitToAction;
-	}
-
 	public FitToAction getFitToAction() {
 		return fitToAction;
+	}
+
+	public void setFitToAction(FitToAction fitToAction) {
+		this.fitToAction = fitToAction;
 	}
 
 	// Toolbar
@@ -268,12 +244,12 @@ public class PdfViewPage extends ScrolledComposite {
 	 */
 	private PdfViewToolbarManager toolbar;
 
-	public void setToolbar(PdfViewToolbarManager toolbar) {
-		this.toolbar = toolbar;
-	}
-
 	public PdfViewToolbarManager getToolbar() {
 		return toolbar;
+	}
+
+	public void setToolbar(PdfViewToolbarManager toolbar) {
+		this.toolbar = toolbar;
 	}
 
 	private void refreshToolbar() {
@@ -345,11 +321,6 @@ public class PdfViewPage extends ScrolledComposite {
 	// Hyperlinks
 
 	/**
-	 * The composite containing the point-and-click hyperlinks.
-	 */
-	private Composite hyperlinks;
-
-	/**
 	 * The annotation-to-hyperlink mappings.
 	 */
 	private final Map<PdfAnnotation, PdfAnnotationHyperlink> annotationHyperlinkMap = new HashMap<PdfAnnotation, PdfAnnotationHyperlink>();
@@ -359,13 +330,13 @@ public class PdfViewPage extends ScrolledComposite {
 	 * page.
 	 */
 	protected void createHyperlinks() {
-		for (Control oldHyperlink : hyperlinks.getChildren()) {
+		for (Control oldHyperlink : pdfDisplay.getChildren()) {
 			oldHyperlink.dispose();
 		}
 		annotationHyperlinkMap.clear();
 		for (PdfAnnotation annotation : annotations) {
 			if (annotation.page == getPage()) {
-				PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(hyperlinks, annotation);
+				PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(pdfDisplay, annotation);
 				annotationHyperlinkMap.put(annotation, hyperlink);
 				float zoom = getZoom();
 				float left = annotation.left * zoom;
@@ -557,7 +528,7 @@ public class PdfViewPage extends ScrolledComposite {
 			HyperlinkHighlightAnimatorState state = states[stateIndex];
 			if (!state.isReady()) {
 				state.step();
-				hyperlinks.redraw();
+				pdfDisplay.redraw();
 			} else {
 				if (stateIndex < states.length - 1) {
 					stateIndex++;
@@ -567,7 +538,7 @@ public class PdfViewPage extends ScrolledComposite {
 					return;
 				}
 			}
-			Display.getDefault().timerExec(1, this);
+			Display.getDefault().timerExec(10, this);
 		}
 
 	}

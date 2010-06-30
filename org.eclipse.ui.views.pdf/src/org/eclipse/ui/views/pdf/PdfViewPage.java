@@ -3,14 +3,17 @@ package org.eclipse.ui.views.pdf;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
@@ -301,8 +304,9 @@ public class PdfViewPage extends ScrolledComposite {
 								URI uri = new URI(new String(uriDecodedBytes));
 								if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
 									String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
-									String filename = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
-									IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(new URI("file", filename, null)); //$NON-NLS-1$
+									String path = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
+									URL url = new URL("file", null, path); //$NON-NLS-1$
+									IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
 									if (files.length > 0) {
 										PdfAnnotation annotation = new PdfAnnotation();
 										annotation.page = page;
@@ -323,6 +327,8 @@ public class PdfViewPage extends ScrolledComposite {
 								Activator.logError("Programming error", e);
 							} catch (ArrayIndexOutOfBoundsException e) {
 								Activator.logError("Error while parsing annotation URI", e);
+							} catch (MalformedURLException e) {
+								Activator.logError("Can't transform URI to URL", e);
 							}
 						}
 					}

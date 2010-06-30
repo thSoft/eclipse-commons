@@ -16,6 +16,7 @@ import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.util.ImageUtils;
 import org.eclipse.swt.widgets.Composite;
@@ -51,7 +52,7 @@ public class PdfViewPage extends ScrolledComposite {
 	// Rendering
 
 	/**
-	 * The label displaying the current page of the PDF file.
+	 * The control displaying the current page of the PDF file.
 	 */
 	private Composite pdfDisplay;
 
@@ -75,15 +76,27 @@ public class PdfViewPage extends ScrolledComposite {
 				int width = awtImage.getWidth();
 				int height = awtImage.getHeight();
 				pdfDisplay.setSize(width, height);
-				int left = Math.max(0, getClientArea().width / 2 - width / 2);
-				int top = Math.max(0, getClientArea().height / 2 - height / 2);
-				pdfDisplay.setLocation(left, top);
+				align();
 			} catch (PdfException e) {
 				Activator.logError("Can't redraw PDF page", e);
 			}
 			createHyperlinks();
 			refreshToolbar();
 		}
+	}
+
+	private void align() {
+		Rectangle clientArea = getClientArea();
+		Point size = pdfDisplay.getSize();
+		int left = Math.max(0, clientArea.width / 2 - size.x / 2);
+		int top = Math.max(0, clientArea.height / 2 - size.y / 2);
+		pdfDisplay.setLocation(left, top);
+	}
+
+	@Override
+	public void setBounds(Rectangle rect) {
+		super.setBounds(rect);
+		align();
 	}
 
 	// File handling
@@ -509,6 +522,8 @@ public class PdfViewPage extends ScrolledComposite {
 
 	private class HyperlinkHighlightAnimator implements Runnable {
 
+		private static final int INTERVAL = 10;
+
 		private int stateIndex;
 
 		private final HyperlinkHighlightAnimatorState[] states = HyperlinkHighlightAnimatorState.values();
@@ -538,7 +553,7 @@ public class PdfViewPage extends ScrolledComposite {
 					return;
 				}
 			}
-			Display.getDefault().timerExec(10, this);
+			Display.getDefault().timerExec(INTERVAL, this);
 		}
 
 	}

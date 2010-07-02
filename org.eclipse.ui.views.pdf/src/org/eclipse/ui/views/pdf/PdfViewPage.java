@@ -91,14 +91,21 @@ public class PdfViewPage extends ScrolledComposite {
 	private void align() {
 		Rectangle clientArea = getClientArea();
 		Point size = pdfDisplay.getSize();
-		int left = Math.max(0, clientArea.width / 2 - size.x / 2);
-		int top = Math.max(0, clientArea.height / 2 - size.y / 2);
+		Point location = pdfDisplay.getLocation();
+		int left = location.x < 0 ? location.x : Math.max(0, clientArea.width / 2 - size.x / 2);
+		int top = location.y < 0 ? location.y : Math.max(0, clientArea.height / 2 - size.y / 2);
 		pdfDisplay.setLocation(left, top);
 	}
 
 	@Override
 	public void setBounds(Rectangle rect) {
 		super.setBounds(rect);
+		align();
+	}
+
+	@Override
+	public void setOrigin(Point origin) {
+		super.setOrigin(origin);
 		align();
 	}
 

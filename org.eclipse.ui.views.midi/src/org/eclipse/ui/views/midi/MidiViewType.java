@@ -7,31 +7,48 @@ import org.eclipse.ui.views.file.IFileViewType;
 
 public class MidiViewType implements IFileViewType<MidiViewPage> {
 
+	public static final String EXTENSION = "midi"; //$NON-NLS-1$
+
 	@Override
-	public MidiViewPage createPage(PageBook pageBook, IFile file) {
+	public MidiViewPage createPage(PageBook pageBook, IFile file) throws Exception {
 		return new MidiViewPage(pageBook, file);
 	}
 
+	private final MidiViewToolbarManager toolbar = new MidiViewToolbarManager();
+
 	@Override
 	public IContributionItem[] getToolbarContributions() {
-		// TODO Auto-generated method stub
-		return null;
+		return toolbar.getToolbarContributions();
+	}
+
+	private MidiViewPage page;
+
+	private void setPage(MidiViewPage page) {
+		this.page = page;
+	}
+
+	public MidiViewPage getPage() {
+		return page;
 	}
 
 	@Override
 	public void pageShown(MidiViewPage page) {
-		// TODO Auto-generated method stub
+		if (getPage() != null) {
+			getPage().pause();
+		}
+		setPage(page);
+		toolbar.setPage(page);
+		page.setPlaybackAction(toolbar.getPlaybackAction());
 	}
 
 	@Override
 	public void reload(MidiViewPage page) throws Exception {
-		// TODO Auto-generated method stub
+		page.reload();
 	}
 
 	@Override
 	public void pageClosed(MidiViewPage page) {
-		// TODO Auto-generated method stub
-		
+		page.closeFile();
 	}
 
 }

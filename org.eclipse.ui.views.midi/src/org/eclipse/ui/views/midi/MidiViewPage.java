@@ -22,6 +22,8 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.ControlAdapter;
+import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -86,9 +88,7 @@ public class MidiViewPage extends ScrolledComposite {
 
 		time.setMaximumValue((int)sequencer.getMicrosecondLength());
 		tracks.setInput(sequencer.getSequence());
-		for (TableColumn column : tracks.getTable().getColumns()) {
-			column.pack();
-		}
+		layoutColumns();
 		setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
@@ -226,7 +226,7 @@ public class MidiViewPage extends ScrolledComposite {
 	private TableViewer tracks;
 
 	private void addTracks(Composite parent) {
-		tracks = new TableViewer(parent);
+		tracks = new TableViewer(parent, SWT.BORDER | SWT.NO_SCROLL);
 		for (TrackColumn trackColumn : TrackColumn.values()) {
 			TableViewerColumn tableViewerColumn = new TableViewerColumn(tracks, SWT.NONE);
 			tableViewerColumn.setEditingSupport(new TrackEditingSupport(tracks, trackColumn));
@@ -240,6 +240,25 @@ public class MidiViewPage extends ScrolledComposite {
 		table.setLinesVisible(true);
 		tracks.setContentProvider(new TrackContentProvider());
 		tracks.setLabelProvider(new TrackLabelProvider());
+		addControlListener(new ControlAdapter() {
+
+			public void controlResized(ControlEvent e) {
+				layoutColumns();
+			}
+
+		});
+	}
+
+	private void layoutColumns() {
+		layout();
+		Table table = tracks.getTable();
+		int widthOfOtherColumns = 0;
+		for (int i = 1; i < table.getColumnCount(); i++) {
+			TableColumn column = table.getColumn(i);
+			column.pack();
+			widthOfOtherColumns += column.getWidth();
+		}
+		table.getColumn(0).setWidth(table.getSize().x - widthOfOtherColumns - table.getBorderWidth()- 2);
 	}
 
 	private enum TrackColumn {
@@ -333,7 +352,7 @@ public class MidiViewPage extends ScrolledComposite {
 		protected String getCheckLabel(Sequencer sequencer, Track track) { // XXX workaround for https://bugs.eclipse.org/bugs/show_bug.cgi?id=285121
 			return (Boolean)getValue(sequencer, MidiUtils.getTrackNumber(sequencer, track)) ? "✓" : "";
 		}
-		
+
 	}
 
 	private class TrackContentProvider implements IStructuredContentProvider {

@@ -83,8 +83,12 @@ public class MidiViewPage extends ScrolledComposite {
 	public void setFile(IFile file) throws InvalidMidiDataException, IOException {
 		this.file = file;
 		sequencer.setSequence(MidiSystem.getSequence(file.getRawLocation().toFile()));
+
 		time.setMaximumValue((int)sequencer.getMicrosecondLength());
 		tracks.setInput(sequencer.getSequence());
+		for (TableColumn column : tracks.getTable().getColumns()) {
+			column.pack();
+		}
 		setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
@@ -228,7 +232,6 @@ public class MidiViewPage extends ScrolledComposite {
 			tableViewerColumn.setEditingSupport(new TrackEditingSupport(tracks, trackColumn));
 			TableColumn tableColumn = tableViewerColumn.getColumn();
 			tableColumn.setText(trackColumn.name);
-			tableColumn.setWidth(trackColumn.width);
 			tableColumn.setImage(Activator.getImageDescriptor(ICON_PATH + trackColumn.iconFilename).createImage());
 			tableColumn.setAlignment(SWT.CENTER);
 		}
@@ -240,7 +243,7 @@ public class MidiViewPage extends ScrolledComposite {
 	}
 
 	private enum TrackColumn {
-		NAME("Track name", 128, "Name.png") { //$NON-NLS-2$
+		NAME("Track name", "Name.png") { //$NON-NLS-2$
 
 			@Override
 			public String getColumnText(Sequencer sequencer, Track track) {
@@ -263,7 +266,7 @@ public class MidiViewPage extends ScrolledComposite {
 			}
 
 		},
-		MUTE("Mute", 64, "Mute.png") { //$NON-NLS-2$
+		MUTE("Mute", "Mute.png") { //$NON-NLS-2$
 
 			@Override
 			public String getColumnText(Sequencer sequencer, Track track) {
@@ -286,7 +289,7 @@ public class MidiViewPage extends ScrolledComposite {
 			}
 
 		},
-		SOLO("Solo", 64, "Solo.png") { //$NON-NLS-2$
+		SOLO("Solo", "Solo.png") { //$NON-NLS-2$
 
 			@Override
 			public String getColumnText(Sequencer sequencer, Track track) {
@@ -310,15 +313,12 @@ public class MidiViewPage extends ScrolledComposite {
 
 		};
 
-		private TrackColumn(String name, int width, String iconFilename) {
+		private TrackColumn(String name, String iconFilename) {
 			this.name = name;
-			this.width = width;
 			this.iconFilename = iconFilename;
 		}
 
 		private final String name;
-
-		private final int width;
 
 		private final String iconFilename;
 

@@ -3,23 +3,39 @@ package org.eclipse.ui.views.midi;
 import java.io.IOException;
 import java.text.MessageFormat;
 import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.Synthesizer;
+import javax.sound.midi.Track;
+import javax.util.midi.MidiUtils;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.CheckboxCellEditor;
+import org.eclipse.jface.viewers.EditingSupport;
+import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
 
 public class MidiViewPage extends ScrolledComposite {
 
 	public static final String ICON_PATH = "icons/"; //$NON-NLS-1$
+
+	private final Composite content;
 
 	private final Sequencer sequencer;
 
@@ -29,7 +45,7 @@ public class MidiViewPage extends ScrolledComposite {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		setExpandHorizontal(true);
 		setExpandVertical(true);
-		Composite content = new Composite(this, SWT.NONE);
+		content = new Composite(this, SWT.NONE);
 		content.setLayout(new GridLayout(1, true));
 		setContent(content);
 
@@ -42,13 +58,13 @@ public class MidiViewPage extends ScrolledComposite {
 		addTime(content);
 		addVolume(content);
 		addTempo(content);
+		addTracks(content);
 		for (Control child : content.getChildren()) {
 			GridData layoutData = new GridData();
 			layoutData.horizontalAlignment = SWT.FILL;
 			layoutData.grabExcessHorizontalSpace = true;
 			child.setLayoutData(layoutData);
 		}
-		setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 
 		setFile(file);
 	}
@@ -68,6 +84,8 @@ public class MidiViewPage extends ScrolledComposite {
 		this.file = file;
 		sequencer.setSequence(MidiSystem.getSequence(file.getRawLocation().toFile()));
 		time.setMaximumValue((int)sequencer.getMicrosecondLength());
+		tracks.setInput(sequencer.getSequence());
+		setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	public void reload() throws InvalidMidiDataException, IOException {
@@ -158,8 +176,6 @@ public class MidiViewPage extends ScrolledComposite {
 
 	private static final int MAX_VOLUME = 100;
 
-	private static final int CHANNEL_VOLUME = 7;
-
 	private void addVolume(Composite parent) {
 		new NumericValueEditor(parent, "Volume", Activator.getImageDescriptor(ICON_PATH + "Volume.png"), Activator.getImageDescriptor(ICON_PATH + "Reset.png"), MAX_VOLUME, MAX_VOLUME / 2, new ValueHooks() { //$NON-NLS-2$ //$NON-NLS-3$
 
@@ -171,10 +187,7 @@ public class MidiViewPage extends ScrolledComposite {
 			@Override
 			public void valueSet(int value) {
 				int volume = value * 127 / 100;
-				MidiChannel[] channels = synthesizer.getChannels();
-				for (MidiChannel channel : channels) {
-					channel.controlChange(CHANNEL_VOLUME, volume);
-				}
+				MidiUtils.setVolume(synthesizer, volume);
 			}
 
 		});
@@ -206,6 +219,189 @@ public class MidiViewPage extends ScrolledComposite {
 
 	// Tracks
 
-	// TODO
+	private TableViewer tracks;
+
+	private void addTracks(Composite parent) {
+		tracks = new TableViewer(parent);
+		for (TrackColumn trackColumn : TrackColumn.values()) {
+			TableViewerColumn tableViewerColumn = new TableViewerColumn(tracks, SWT.NONE);
+			tableViewerColumn.setEditingSupport(new TrackEditingSupport(tracks, trackColumn));
+			TableColumn tableColumn = tableViewerColumn.getColumn();
+			tableColumn.setText(trackColumn.name);
+			tableColumn.setWidth(trackColumn.width);
+			tableColumn.setImage(Activator.getImageDescriptor(ICON_PATH + trackColumn.iconFilename).createImage());
+			tableColumn.setAlignment(SWT.CENTER);
+		}
+		Table table = tracks.getTable();
+		table.setHeaderVisible(true);
+		table.setLinesVisible(true);
+		tracks.setContentProvider(new TrackContentProvider());
+		tracks.setLabelProvider(new TrackLabelProvider());
+	}
+
+	private enum TrackColumn {
+		NAME("Track name", 128, "Name.png") { //$NON-NLS-2$
+
+			@Override
+			public String getColumnText(Sequencer sequencer, Track track) {
+				String result = MidiUtils.getTrackName(track);
+				return (result.isEmpty() ? "(untitled)" : result);
+			}
+
+			@Override
+			public CellEditor getCellEditor(Composite parent) {
+				return null;
+			}
+
+			@Override
+			public Object getValue(Sequencer sequencer, int trackNumber) {
+				return null;
+			}
+
+			@Override
+			public void setValue(Sequencer sequencer, int trackNumber, Object value) {
+			}
+
+		},
+		MUTE("Mute", 64, "Mute.png") { //$NON-NLS-2$
+
+			@Override
+			public String getColumnText(Sequencer sequencer, Track track) {
+				return getCheckLabel(sequencer, track);
+			}
+
+			@Override
+			public CellEditor getCellEditor(Composite parent) {
+				return new CheckboxCellEditor(parent);
+			}
+
+			@Override
+			public Object getValue(Sequencer sequencer, int trackNumber) {
+				return sequencer.getTrackMute(trackNumber);
+			}
+
+			@Override
+			public void setValue(Sequencer sequencer, int trackNumber, Object value) {
+				sequencer.setTrackMute(trackNumber, (Boolean)value);
+			}
+
+		},
+		SOLO("Solo", 64, "Solo.png") { //$NON-NLS-2$
+
+			@Override
+			public String getColumnText(Sequencer sequencer, Track track) {
+				return getCheckLabel(sequencer, track);
+			}
+
+			@Override
+			public CellEditor getCellEditor(Composite parent) {
+				return new CheckboxCellEditor(parent);
+			}
+
+			@Override
+			public Object getValue(Sequencer sequencer, int trackNumber) {
+				return sequencer.getTrackSolo(trackNumber);
+			}
+
+			@Override
+			public void setValue(Sequencer sequencer, int trackNumber, Object value) {
+				sequencer.setTrackSolo(trackNumber, (Boolean)value);
+			}
+
+		};
+
+		private TrackColumn(String name, int width, String iconFilename) {
+			this.name = name;
+			this.width = width;
+			this.iconFilename = iconFilename;
+		}
+
+		private final String name;
+
+		private final int width;
+
+		private final String iconFilename;
+
+		public abstract String getColumnText(Sequencer sequencer, Track track);
+
+		public abstract CellEditor getCellEditor(Composite parent);
+
+		public abstract Object getValue(Sequencer sequencer, int trackNumber);
+
+		public abstract void setValue(Sequencer sequencer, int trackNumber, Object value);
+
+		protected String getCheckLabel(Sequencer sequencer, Track track) { // XXX workaround for https://bugs.eclipse.org/bugs/show_bug.cgi?id=285121
+			return (Boolean)getValue(sequencer, MidiUtils.getTrackNumber(sequencer, track)) ? "✓" : "";
+		}
+		
+	}
+
+	private class TrackContentProvider implements IStructuredContentProvider {
+
+		@Override
+		public Object[] getElements(Object inputElement) {
+			return ((Sequence)inputElement).getTracks();
+		}
+
+		@Override
+		public void dispose() {
+		}
+
+		@Override
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+		}
+
+	}
+
+	public class TrackLabelProvider extends LabelProvider implements ITableLabelProvider {
+
+		@Override
+		public String getColumnText(Object element, int columnIndex) {
+			return TrackColumn.values()[columnIndex].getColumnText(sequencer, (Track)element);
+		}
+
+		@Override
+		public Image getColumnImage(Object element, int columnIndex) {
+			return null;
+		}
+
+	}
+
+	public class TrackEditingSupport extends EditingSupport {
+
+		private final TrackColumn column;
+
+		private final CellEditor cellEditor;
+
+		public TrackEditingSupport(TableViewer viewer, TrackColumn column) {
+			super(viewer);
+			this.column = column;
+			cellEditor = column.getCellEditor(viewer.getTable());
+		}
+
+		@Override
+		protected CellEditor getCellEditor(Object element) {
+			return cellEditor;
+		}
+
+		@Override
+		protected boolean canEdit(Object element) {
+			return cellEditor != null;
+		}
+
+		@Override
+		protected Object getValue(Object element) {
+			int trackNumber = MidiUtils.getTrackNumber(sequencer, (Track)element);
+			return column.getValue(sequencer, trackNumber);
+		}
+
+		@Override
+		protected void setValue(Object element, Object value) {
+			int trackNumber = MidiUtils.getTrackNumber(sequencer, (Track)element);
+			column.setValue(sequencer, trackNumber, value);
+			getViewer().update(element, null);
+		}
+
+	}
 
 }

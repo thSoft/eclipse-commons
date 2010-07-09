@@ -10,16 +10,6 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	public static final String EXTENSION = "pdf"; //$NON-NLS-1$
 
-	private PdfViewPage page;
-
-	private void setPage(PdfViewPage page) {
-		this.page = page;
-	}
-
-	public PdfViewPage getPage() {
-		return page;
-	}
-
 	@Override
 	public PdfViewPage createPage(PageBook pageBook, IFile file) throws Exception {
 		return new PdfViewPage(pageBook, file);
@@ -30,6 +20,16 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 	@Override
 	public IContributionItem[] getToolbarContributions() {
 		return toolbar.getToolbarContributions();
+	}
+
+	private PdfViewPage page;
+
+	private void setPage(PdfViewPage page) {
+		this.page = page;
+	}
+
+	public PdfViewPage getPage() {
+		return page;
 	}
 
 	@Override

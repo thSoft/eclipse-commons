@@ -48,8 +48,7 @@ public class PdfViewPage extends ScrolledComposite {
 		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
 		setContent(pdfDisplay);
 
-		this.file = file;
-		reload();
+		setFile(file);
 	}
 
 	// Rendering

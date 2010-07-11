@@ -13,7 +13,11 @@ import java.util.List;
 import java.util.Map;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.URIUtil;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
@@ -67,23 +71,38 @@ public class PdfViewPage extends ScrolledComposite {
 	public void redraw() {
 		if (isFileOpen()) {
 			pdfDecoder.setPageParameters(getZoom(), getPage());
-			try {
-				BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
-				Image oldImage = pdfDisplay.getBackgroundImage();
-				if (oldImage != null) {
-					oldImage.dispose();
+			new Job("Rendering PDF page") {
+
+				@Override
+				public IStatus run(IProgressMonitor monitor) {
+					try {
+						final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
+						final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
+						Display.getDefault().asyncExec(new Runnable() {
+
+							@Override
+							public void run() {
+								Image oldImage = pdfDisplay.getBackgroundImage();
+								if (oldImage != null) {
+									oldImage.dispose();
+								}
+								pdfDisplay.setBackgroundImage(swtImage);
+								int width = awtImage.getWidth();
+								int height = awtImage.getHeight();
+								pdfDisplay.setSize(width, height);
+								align();
+								refreshToolbar();
+							}
+
+						});
+					} catch (PdfException e) {
+						Activator.logError("Can't render PDF page", e);
+					}
+					return Status.OK_STATUS;
 				}
-				Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
-				pdfDisplay.setBackgroundImage(swtImage);
-				int width = awtImage.getWidth();
-				int height = awtImage.getHeight();
-				pdfDisplay.setSize(width, height);
-				align();
-			} catch (PdfException e) {
-				Activator.logError("Can't redraw PDF page", e);
-			}
+
+			}.schedule();
 			createHyperlinks();
-			refreshToolbar();
 		}
 	}
 
@@ -283,18 +302,21 @@ public class PdfViewPage extends ScrolledComposite {
 	// Annotations
 
 	/**
-	 * The textedit annotations in the PDF file.
+	 * The hyperlink annotations in the PDF file per page.
 	 */
-	private final List<PdfAnnotation> annotations = new ArrayList<PdfAnnotation>();
+	private final List<List<PdfAnnotation>> annotations = new ArrayList<List<PdfAnnotation>>();
 
-	public PdfAnnotation[] getAnnotations() {
-		return annotations.toArray(new PdfAnnotation[0]);
+	public PdfAnnotation[] getAnnotationsOnPage(int page) {
+		return annotations.get(page - 1).toArray(new PdfAnnotation[0]);
 	}
 
 	private void loadAnnotations() {
+		// TODO asynchronously
 		annotations.clear();
 		AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
 		for (int page = 1; page <= getPageCount(); page++) {
+			ArrayList<PdfAnnotation> annotationsOnPage = new ArrayList<PdfAnnotation>();
+			annotations.add(annotationsOnPage);
 			PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
 			if (pdfAnnotations != null) {
 				while (pdfAnnotations.hasMoreTokens()) {
@@ -324,7 +346,7 @@ public class PdfViewPage extends ScrolledComposite {
 										annotation.bottom = rectangle[1];
 										annotation.right = rectangle[2];
 										annotation.top = rectangle[3];
-										annotations.add(annotation);
+										annotationsOnPage.add(annotation);
 									}
 								}
 							} catch (URISyntaxException e) {
@@ -351,32 +373,53 @@ public class PdfViewPage extends ScrolledComposite {
 	private final Map<PdfAnnotation, PdfAnnotationHyperlink> annotationHyperlinkMap = new HashMap<PdfAnnotation, PdfAnnotationHyperlink>();
 
 	/**
-	 * Creates point-and-click hyperlinks from the form annotations on the current
-	 * page.
+	 * Creates point-and-click hyperlinks from the hyperlink annotations on the
+	 * current page.
 	 */
 	protected void createHyperlinks() {
-		for (Control oldHyperlink : pdfDisplay.getChildren()) {
-			oldHyperlink.dispose();
-		}
-		annotationHyperlinkMap.clear();
-		for (PdfAnnotation annotation : annotations) {
-			if (annotation.page == getPage()) {
-				PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(pdfDisplay, annotation);
-				annotationHyperlinkMap.put(annotation, hyperlink);
-				float zoom = getZoom();
-				float left = annotation.left * zoom;
-				float right = annotation.right * zoom;
-				float width = Math.abs(right - left);
-				float top = annotation.top * zoom;
-				float bottom = annotation.bottom * zoom;
-				float height = Math.abs(bottom - top);
-				Rectangle2D.Float bounds = new Rectangle2D.Float(left, top, width, height);
-				float pageWidth = getPageWidth() * zoom;
-				float pageHeight = getPageHeight() * zoom;
-				transform(bounds, getPageRotation(), pageWidth, pageHeight);
-				hyperlink.setBounds((int)bounds.x, (int)bounds.y, (int)bounds.width, (int)bounds.height);
+		new Job("Creating point-and-click hyperlinks") {
+
+			@Override
+			public IStatus run(IProgressMonitor monitor) {
+				Display.getDefault().syncExec(new Runnable() {
+
+					@Override
+					public void run() {
+						Control[] oldHyperlinks = pdfDisplay.getChildren();
+						for (Control oldHyperlink : oldHyperlinks) {
+							oldHyperlink.dispose();
+						}
+					}
+
+				});
+				annotationHyperlinkMap.clear();
+				for (final PdfAnnotation annotation : getAnnotationsOnPage(page)) {
+					Display.getDefault().syncExec(new Runnable() {
+
+						@Override
+						public void run() {
+							PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(pdfDisplay, annotation);
+							annotationHyperlinkMap.put(annotation, hyperlink);
+							float zoom = getZoom();
+							float left = annotation.left * zoom;
+							float right = annotation.right * zoom;
+							float width = Math.abs(right - left);
+							float top = annotation.top * zoom;
+							float bottom = annotation.bottom * zoom;
+							float height = Math.abs(bottom - top);
+							Rectangle2D.Float bounds = new Rectangle2D.Float(left, top, width, height);
+							float pageWidth = getPageWidth() * zoom;
+							float pageHeight = getPageHeight() * zoom;
+							transform(bounds, getPageRotation(), pageWidth, pageHeight);
+							hyperlink.setBounds((int)bounds.x, (int)bounds.y, (int)bounds.width, (int)bounds.height);
+						}
+
+					});
+				}
+				return Status.OK_STATUS;
 			}
-		}
+
+		}.schedule();
 	}
 
 	private void transform(Rectangle2D.Float rectangle, int rotation, float pageWidth, float pageHeight) {

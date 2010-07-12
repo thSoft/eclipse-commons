@@ -248,7 +248,7 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	public void setZoom(float zoom) {
-		if (isZoomValid(zoom)) {
+		if (isZoomValid(zoom) && (zoom != getZoom())) {
 			this.zoom = zoom;
 			redraw();
 		}

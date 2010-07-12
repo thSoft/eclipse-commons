@@ -395,13 +395,6 @@ public class PdfViewPage extends ScrolledComposite {
 
 	private final Job createHyperlinksJob = new Job("Creating point-and-click hyperlinks") {
 
-		private boolean canceling;
-
-		@Override
-		protected void canceling() {
-			canceling = true;
-		}
-
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
 			waitForLoadingAnnotations();
@@ -417,10 +410,9 @@ public class PdfViewPage extends ScrolledComposite {
 
 			});
 			annotationHyperlinkMap.clear();
-			canceling = false;
 			for (final PdfAnnotation annotation : getAnnotationsOnPage(page)) {
-				if (canceling) {
-					break;
+				if (monitor.isCanceled()) {
+					return Status.CANCEL_STATUS;
 				}
 				Display.getDefault().syncExec(new Runnable() {
 

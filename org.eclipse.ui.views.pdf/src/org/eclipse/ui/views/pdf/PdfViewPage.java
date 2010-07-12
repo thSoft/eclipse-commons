@@ -67,41 +67,44 @@ public class PdfViewPage extends ScrolledComposite {
 	 */
 	private final PdfDecoder pdfDecoder = new PdfDecoder();
 
+	private final Job renderJob = new Job("Rendering PDF page") {
+
+		@Override
+		public IStatus run(IProgressMonitor monitor) {
+			waitForLoadingAnnotations();
+			try {
+				final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
+				final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
+				Display.getDefault().asyncExec(new Runnable() {
+
+					@Override
+					public void run() {
+						Image oldImage = pdfDisplay.getBackgroundImage();
+						if (oldImage != null) {
+							oldImage.dispose();
+						}
+						pdfDisplay.setBackgroundImage(swtImage);
+						int width = awtImage.getWidth();
+						int height = awtImage.getHeight();
+						pdfDisplay.setSize(width, height);
+						align();
+						refreshToolbar();
+					}
+
+				});
+			} catch (PdfException e) {
+				Activator.logError("Can't render PDF page", e);
+			}
+			return Status.OK_STATUS;
+		}
+
+	};
+
 	@Override
 	public void redraw() {
 		if (isFileOpen()) {
 			pdfDecoder.setPageParameters(getZoom(), getPage());
-			new Job("Rendering PDF page") {
-
-				@Override
-				public IStatus run(IProgressMonitor monitor) {
-					try {
-						final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
-						final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
-						Display.getDefault().asyncExec(new Runnable() {
-
-							@Override
-							public void run() {
-								Image oldImage = pdfDisplay.getBackgroundImage();
-								if (oldImage != null) {
-									oldImage.dispose();
-								}
-								pdfDisplay.setBackgroundImage(swtImage);
-								int width = awtImage.getWidth();
-								int height = awtImage.getHeight();
-								pdfDisplay.setSize(width, height);
-								align();
-								refreshToolbar();
-							}
-
-						});
-					} catch (PdfException e) {
-						Activator.logError("Can't render PDF page", e);
-					}
-					return Status.OK_STATUS;
-				}
-
-			}.schedule();
+			renderJob.schedule();
 			createHyperlinks();
 		}
 	}
@@ -310,58 +313,76 @@ public class PdfViewPage extends ScrolledComposite {
 		return annotations.get(page - 1).toArray(new PdfAnnotation[0]);
 	}
 
-	private void loadAnnotations() {
-		// TODO asynchronously
-		annotations.clear();
-		AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
-		for (int page = 1; page <= getPageCount(); page++) {
-			ArrayList<PdfAnnotation> annotationsOnPage = new ArrayList<PdfAnnotation>();
-			annotations.add(annotationsOnPage);
-			PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
-			if (pdfAnnotations != null) {
-				while (pdfAnnotations.hasMoreTokens()) {
-					String key = pdfAnnotations.getNextValueAsString(true);
-					Object rawObject = formRenderer.getFormDataAsObject(key);
-					if ((rawObject != null) && (rawObject instanceof FormObject)) {
-						FormObject formObject = (FormObject)rawObject;
-						int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
-						if (subtype == PdfDictionary.Link) {
-							PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
-							try {
-								byte[] uriDecodedBytes = anchor.getTextStreamValue(PdfDictionary.URI).getBytes("ISO-8859-1"); //$NON-NLS-1$
-								URI uri = new URI(new String(uriDecodedBytes));
-								if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
-									String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
-									String path = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
-									URL url = new URL("file", null, path); //$NON-NLS-1$
-									IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
-									if (files.length > 0) {
-										PdfAnnotation annotation = new PdfAnnotation();
-										annotation.page = page;
-										annotation.file = files[0];
-										annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
-										annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
-										float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
-										annotation.left = rectangle[0];
-										annotation.bottom = rectangle[1];
-										annotation.right = rectangle[2];
-										annotation.top = rectangle[3];
-										annotationsOnPage.add(annotation);
+	private final Job loadAnnotationsJob = new Job("Creating point-and-click hyperlinks") {
+
+		@Override
+		public IStatus run(IProgressMonitor monitor) {
+			annotations.clear();
+			AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
+			for (int page = 1; page <= getPageCount(); page++) {
+				ArrayList<PdfAnnotation> annotationsOnPage = new ArrayList<PdfAnnotation>();
+				annotations.add(annotationsOnPage);
+				PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
+				if (pdfAnnotations != null) {
+					while (pdfAnnotations.hasMoreTokens()) {
+						String key = pdfAnnotations.getNextValueAsString(true);
+						Object rawObject = formRenderer.getFormDataAsObject(key);
+						if ((rawObject != null) && (rawObject instanceof FormObject)) {
+							FormObject formObject = (FormObject)rawObject;
+							int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
+							if (subtype == PdfDictionary.Link) {
+								PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
+								try {
+									byte[] uriDecodedBytes = anchor.getTextStreamValue(PdfDictionary.URI).getBytes("ISO-8859-1"); //$NON-NLS-1$
+									URI uri = new URI(new String(uriDecodedBytes));
+									if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
+										String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
+										String path = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
+										URL url = new URL("file", null, path); //$NON-NLS-1$
+										IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
+										if (files.length > 0) {
+											PdfAnnotation annotation = new PdfAnnotation();
+											annotation.page = page;
+											annotation.file = files[0];
+											annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
+											annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
+											float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
+											annotation.left = rectangle[0];
+											annotation.bottom = rectangle[1];
+											annotation.right = rectangle[2];
+											annotation.top = rectangle[3];
+											annotationsOnPage.add(annotation);
+										}
 									}
+								} catch (URISyntaxException e) {
+									Activator.logError("Invalid annotation URI", e);
+								} catch (UnsupportedEncodingException e) {
+									Activator.logError("Programming error", e);
+								} catch (ArrayIndexOutOfBoundsException e) {
+									Activator.logError("Error while parsing annotation URI", e);
+								} catch (MalformedURLException e) {
+									Activator.logError("Can't transform URI to URL", e);
 								}
-							} catch (URISyntaxException e) {
-								Activator.logError("Invalid annotation URI", e);
-							} catch (UnsupportedEncodingException e) {
-								Activator.logError("Programming error", e);
-							} catch (ArrayIndexOutOfBoundsException e) {
-								Activator.logError("Error while parsing annotation URI", e);
-							} catch (MalformedURLException e) {
-								Activator.logError("Can't transform URI to URL", e);
 							}
 						}
 					}
 				}
 			}
+			return Status.OK_STATUS;
+		}
+
+	};
+
+	private void loadAnnotations() {
+		loadAnnotationsJob.schedule();
+		createHyperlinks();
+	}
+
+	private void waitForLoadingAnnotations() {
+		try {
+			loadAnnotationsJob.join();
+		} catch (InterruptedException e) {
+			Activator.logError("Interrupted while waiting for loading annotations", e);
 		}
 	}
 
@@ -372,54 +393,69 @@ public class PdfViewPage extends ScrolledComposite {
 	 */
 	private final Map<PdfAnnotation, PdfAnnotationHyperlink> annotationHyperlinkMap = new HashMap<PdfAnnotation, PdfAnnotationHyperlink>();
 
+	private final Job createHyperlinksJob = new Job("Creating point-and-click hyperlinks") {
+
+		private boolean canceling;
+
+		@Override
+		protected void canceling() {
+			canceling = true;
+		}
+
+		@Override
+		public IStatus run(IProgressMonitor monitor) {
+			waitForLoadingAnnotations();
+			Display.getDefault().syncExec(new Runnable() {
+
+				@Override
+				public void run() {
+					Control[] oldHyperlinks = pdfDisplay.getChildren();
+					for (Control oldHyperlink : oldHyperlinks) {
+						oldHyperlink.dispose();
+					}
+				}
+
+			});
+			annotationHyperlinkMap.clear();
+			canceling = false;
+			for (final PdfAnnotation annotation : getAnnotationsOnPage(page)) {
+				if (canceling) {
+					break;
+				}
+				Display.getDefault().syncExec(new Runnable() {
+
+					@Override
+					public void run() {
+						PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(pdfDisplay, annotation);
+						annotationHyperlinkMap.put(annotation, hyperlink);
+						float zoom = getZoom();
+						float left = annotation.left * zoom;
+						float right = annotation.right * zoom;
+						float width = Math.abs(right - left);
+						float top = annotation.top * zoom;
+						float bottom = annotation.bottom * zoom;
+						float height = Math.abs(bottom - top);
+						Rectangle2D.Float bounds = new Rectangle2D.Float(left, top, width, height);
+						float pageWidth = getPageWidth() * zoom;
+						float pageHeight = getPageHeight() * zoom;
+						transform(bounds, getPageRotation(), pageWidth, pageHeight);
+						hyperlink.setBounds((int)bounds.x, (int)bounds.y, (int)bounds.width, (int)bounds.height);
+					}
+
+				});
+			}
+			return Status.OK_STATUS;
+		}
+
+	};
+
 	/**
 	 * Creates point-and-click hyperlinks from the hyperlink annotations on the
 	 * current page.
 	 */
 	protected void createHyperlinks() {
-		new Job("Creating point-and-click hyperlinks") {
-
-			@Override
-			public IStatus run(IProgressMonitor monitor) {
-				Display.getDefault().syncExec(new Runnable() {
-
-					@Override
-					public void run() {
-						Control[] oldHyperlinks = pdfDisplay.getChildren();
-						for (Control oldHyperlink : oldHyperlinks) {
-							oldHyperlink.dispose();
-						}
-					}
-
-				});
-				annotationHyperlinkMap.clear();
-				for (final PdfAnnotation annotation : getAnnotationsOnPage(page)) {
-					Display.getDefault().syncExec(new Runnable() {
-
-						@Override
-						public void run() {
-							PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(pdfDisplay, annotation);
-							annotationHyperlinkMap.put(annotation, hyperlink);
-							float zoom = getZoom();
-							float left = annotation.left * zoom;
-							float right = annotation.right * zoom;
-							float width = Math.abs(right - left);
-							float top = annotation.top * zoom;
-							float bottom = annotation.bottom * zoom;
-							float height = Math.abs(bottom - top);
-							Rectangle2D.Float bounds = new Rectangle2D.Float(left, top, width, height);
-							float pageWidth = getPageWidth() * zoom;
-							float pageHeight = getPageHeight() * zoom;
-							transform(bounds, getPageRotation(), pageWidth, pageHeight);
-							hyperlink.setBounds((int)bounds.x, (int)bounds.y, (int)bounds.width, (int)bounds.height);
-						}
-
-					});
-				}
-				return Status.OK_STATUS;
-			}
-
-		}.schedule();
+		createHyperlinksJob.cancel();
+		createHyperlinksJob.schedule();
 	}
 
 	private void transform(Rectangle2D.Float rectangle, int rotation, float pageWidth, float pageHeight) {

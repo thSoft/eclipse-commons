@@ -71,11 +71,11 @@ public class PdfViewPage extends ScrolledComposite {
 
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
-			waitForLoadingAnnotations();
+			waitForJob(loadAnnotationsJob);
 			try {
 				final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
 				final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
-				Display.getDefault().asyncExec(new Runnable() {
+				Display.getDefault().syncExec(new Runnable() {
 
 					@Override
 					public void run() {
@@ -378,11 +378,11 @@ public class PdfViewPage extends ScrolledComposite {
 		createHyperlinks();
 	}
 
-	private void waitForLoadingAnnotations() {
+	private static void waitForJob(Job job) {
 		try {
-			loadAnnotationsJob.join();
+			job.join();
 		} catch (InterruptedException e) {
-			Activator.logError("Interrupted while waiting for loading annotations", e);
+			Activator.logError("Interrupted while waiting for job", e);
 		}
 	}
 
@@ -397,7 +397,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
-			waitForLoadingAnnotations();
+			waitForJob(loadAnnotationsJob);
 			Display.getDefault().syncExec(new Runnable() {
 
 				@Override
@@ -495,6 +495,8 @@ public class PdfViewPage extends ScrolledComposite {
 	 */
 	public void highlightAnnotation(PdfAnnotation annotation) {
 		setPage(annotation.page);
+		waitForJob(renderJob);
+		waitForJob(createHyperlinksJob);
 		PdfAnnotationHyperlink hyperlink = annotationHyperlinkMap.get(annotation);
 		if (hyperlink != null) {
 			highlightedHyperlink = hyperlink;

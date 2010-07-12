@@ -71,7 +71,6 @@ public class PdfViewPage extends ScrolledComposite {
 
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
-			waitForJob(loadAnnotationsJob);
 			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
 				final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
@@ -143,13 +142,13 @@ public class PdfViewPage extends ScrolledComposite {
 
 	public void setFile(IFile file) throws PdfException {
 		pdfDecoder.openPdfFile(file.getLocation().toOSString());
-		loadAnnotations();
 		if (file.equals(this.file)) {
 			setPage(getPage());
 		} else {
 			this.file = file;
 			setPage(1);
 		}
+		loadAnnotations();
 	}
 
 	public void reload() throws PdfException {
@@ -311,13 +310,18 @@ public class PdfViewPage extends ScrolledComposite {
 	private final List<List<PdfAnnotation>> annotations = new ArrayList<List<PdfAnnotation>>();
 
 	public PdfAnnotation[] getAnnotationsOnPage(int page) {
-		return annotations.get(page - 1).toArray(new PdfAnnotation[0]);
+		if (annotations.isEmpty()) {
+			return new PdfAnnotation[0];
+		} else {
+			return annotations.get(page - 1).toArray(new PdfAnnotation[0]);
+		}
 	}
 
 	private final Job loadAnnotationsJob = new Job("Creating point-and-click hyperlinks") {
 
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
+			waitForJob(renderJob);
 			annotations.clear();
 			AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
 			for (int page = 1; page <= getPageCount(); page++) {

@@ -72,6 +72,7 @@ public class PdfViewPage extends ScrolledComposite {
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
 			waitForJob(loadAnnotationsJob);
+			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
 				final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
 				final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
@@ -103,7 +104,6 @@ public class PdfViewPage extends ScrolledComposite {
 	@Override
 	public void redraw() {
 		if (isFileOpen()) {
-			pdfDecoder.setPageParameters(getZoom(), getPage());
 			renderJob.schedule();
 			createHyperlinks();
 		}
@@ -162,6 +162,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 	public void closeFile() {
 		pdfDecoder.closePdfFile();
+		createHyperlinksJob.cancel();
 	}
 
 	// Navigation

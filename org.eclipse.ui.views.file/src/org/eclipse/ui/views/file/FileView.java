@@ -214,12 +214,16 @@ public class FileView extends ViewPart {
 
 	private void load(IFile file) {
 		Composite page = null;
-		try {
-			page = getType().createPage(pageBook, file);
-		} catch (Exception e) {
-			Activator.logError("Can't create file view page", e);
+		if (file.exists()) {
+			try {
+				page = getType().createPage(pageBook, file);
+			} catch (Exception e) {
+				Activator.logError("Can't create file view page", e);
+			}
+			pages.put(file, page);
+		} else {
+			pageBook.showPage(errorPage);
 		}
-		pages.put(file, page);
 	}
 
 	private void refresh() {
@@ -251,11 +255,15 @@ public class FileView extends ViewPart {
 		if (oldPage == null) {
 			load(file);
 		} else {
-			try {
-				getType().reload(oldPage);
-			} catch (Exception e) {
-				Activator.logError("Error while reloading file", e);
-				pages.put(file, null);
+			if (file.exists()) {
+				try {
+					getType().reload(oldPage);
+				} catch (Exception e) {
+					Activator.logError("Error while reloading file", e);
+					pages.put(file, null);
+				}
+			} else {
+				pageBook.showPage(errorPage);
 			}
 		}
 		if (file.equals(getFile())) {

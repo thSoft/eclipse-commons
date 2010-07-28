@@ -263,7 +263,7 @@ public class FileView extends ViewPart {
 					pages.put(file, null);
 				}
 			} else {
-				pageBook.showPage(errorPage);
+				pages.put(file, null);
 			}
 		}
 		if (file.equals(getFile())) {

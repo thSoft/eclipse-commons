@@ -190,7 +190,7 @@ public class MidiViewPage extends ScrolledComposite {
 
 			@Override
 			public void valueSet(int value) {
-				int volume = value * 127 / 100;
+				int volume = (value * 127) / 100;
 				MidiUtils.setVolume(synthesizer, volume);
 			}
 
@@ -242,6 +242,7 @@ public class MidiViewPage extends ScrolledComposite {
 		tracks.setLabelProvider(new TrackLabelProvider());
 		addControlListener(new ControlAdapter() {
 
+			@Override
 			public void controlResized(ControlEvent e) {
 				layoutColumns();
 			}
@@ -258,7 +259,7 @@ public class MidiViewPage extends ScrolledComposite {
 			column.pack();
 			widthOfOtherColumns += column.getWidth();
 		}
-		table.getColumn(0).setWidth(table.getSize().x - widthOfOtherColumns - table.getBorderWidth()- 2);
+		table.getColumn(0).setWidth(table.getSize().x - widthOfOtherColumns - table.getBorderWidth() - 2);
 	}
 
 	private enum TrackColumn {
@@ -267,7 +268,7 @@ public class MidiViewPage extends ScrolledComposite {
 			@Override
 			public String getColumnText(Sequencer sequencer, Track track) {
 				String result = MidiUtils.getTrackName(track);
-				return (result.isEmpty() ? "(untitled)" : result);
+				return ((result == null) || result.isEmpty() ? "(untitled)" : result);
 			}
 
 			@Override

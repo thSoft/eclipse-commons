@@ -38,7 +38,12 @@ public class ResourceUtils {
 	 * is replaced with the given extension.
 	 */
 	public static IFile replaceExtension(IFile file, String extension) {
-		IPath newPath = file.getFullPath().removeFileExtension().addFileExtension(extension);
+		IPath path = file.getFullPath();
+		IPath newPath = path.removeFileExtension();
+		if (path.lastSegment().startsWith(".")) {
+			newPath = newPath.addTrailingSeparator();
+		}
+		newPath = newPath.append("." + extension); // addFileExtension() doesn't work with trailing separator
 		return ResourcesPlugin.getWorkspace().getRoot().getFile(newPath);
 	}
 

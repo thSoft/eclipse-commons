@@ -40,10 +40,12 @@ public class ResourceUtils {
 	public static IFile replaceExtension(IFile file, String extension) {
 		IPath path = file.getFullPath();
 		IPath newPath = path.removeFileExtension();
-		if (path.lastSegment().startsWith(".")) {
-			newPath = newPath.addTrailingSeparator();
+		final String dot = "."; //$NON-NLS-1$
+		if (path.lastSegment().startsWith(dot)) {
+			newPath = newPath.addTrailingSeparator().append(dot + extension); // addFileExtension() doesn't work with trailing separator
+		} else {
+			newPath = newPath.addFileExtension(extension);
 		}
-		newPath = newPath.append("." + extension); // addFileExtension() doesn't work with trailing separator
 		return ResourcesPlugin.getWorkspace().getRoot().getFile(newPath);
 	}
 

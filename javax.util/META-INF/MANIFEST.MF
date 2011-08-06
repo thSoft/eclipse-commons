@@ -5,6 +5,7 @@ Bundle-SymbolicName: javax.util
 Bundle-Version: 0.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: javax.util.collections,
+ javax.util.file,
  javax.util.midi,
  javax.util.process
 Bundle-Vendor: Open Source Community

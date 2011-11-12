@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Guava
 Bundle-SymbolicName: com.google.common
-Bundle-Version: 1.0.9
+Bundle-Version: 10.0.1
 Bundle-ClassPath: guava.jar
 Bundle-Vendor: Google
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

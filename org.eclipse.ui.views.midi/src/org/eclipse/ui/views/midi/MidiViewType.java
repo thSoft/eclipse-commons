@@ -33,7 +33,7 @@ public class MidiViewType implements IFileViewType<MidiViewPage> {
 
 	@Override
 	public void pageShown(MidiViewPage page) {
-		if (getPage() != null) {
+		if ((getPage() != null) && (page != getPage())) {
 			getPage().pause();
 		}
 		setPage(page);

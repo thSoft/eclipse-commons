@@ -102,32 +102,28 @@ public class MidiViewPage extends ScrolledComposite {
 
 	// Playback
 
-	private MidiViewToolbarManager.PlaybackAction playbackAction;
-
-	public MidiViewToolbarManager.PlaybackAction getPlaybackAction() {
-		return playbackAction;
-	}
-
-	public void setPlaybackAction(MidiViewToolbarManager.PlaybackAction playbackAction) {
-		this.playbackAction = playbackAction;
-	}
-
 	public void play() {
 		if (isFinished()) {
 			sequencer.setMicrosecondPosition(0);
 		}
 		sequencer.start();
-		getPlaybackAction().setPlaying(true);
 		Display.getDefault().timerExec(0, new Updater());
 	}
 
 	public void pause() {
 		sequencer.stop();
-		getPlaybackAction().setPlaying(false);
 	}
 
 	public boolean isPlaying() {
 		return sequencer.isRunning();
+	}
+
+	public void togglePlayback() {
+		if (isPlaying()) {
+			pause();
+		} else {
+			play();
+		}
 	}
 
 	// Time

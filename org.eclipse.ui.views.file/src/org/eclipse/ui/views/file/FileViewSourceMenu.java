@@ -11,7 +11,7 @@ import org.eclipse.swt.widgets.Menu;
  * A drop-down menu that lets the user select the file view source, and shows
  * the current file view source and file.
  */
-public class FileViewSourceMenu extends Action implements IMenuCreator {
+public class FileViewSourceMenu extends Action implements IMenuCreator { // TODO rewrite as command menu contribution
 
 	private static final String ID_SUFFIX = ".toolbar.Source"; //$NON-NLS-1$
 

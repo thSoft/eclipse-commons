@@ -14,11 +14,9 @@ public class MidiViewType implements IFileViewType<MidiViewPage> {
 		return new MidiViewPage(pageBook, file);
 	}
 
-	private final MidiViewToolbarManager toolbar = new MidiViewToolbarManager();
-
 	@Override
 	public IContributionItem[] getToolbarContributions() {
-		return toolbar.getToolbarContributions();
+		return new IContributionItem[0];
 	}
 
 	private MidiViewPage page;
@@ -37,8 +35,6 @@ public class MidiViewType implements IFileViewType<MidiViewPage> {
 			getPage().pause();
 		}
 		setPage(page);
-		toolbar.setPage(page);
-		page.setPlaybackAction(toolbar.getPlaybackAction());
 	}
 
 	@Override

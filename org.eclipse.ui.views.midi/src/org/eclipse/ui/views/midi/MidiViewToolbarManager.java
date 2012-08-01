@@ -3,6 +3,7 @@ package org.eclipse.ui.views.midi;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.IContributionItem;
+import org.eclipse.swt.SWT;
 
 public class MidiViewToolbarManager {
 
@@ -20,6 +21,7 @@ public class MidiViewToolbarManager {
 
 		public PlaybackAction() {
 			setPlaying(false);
+			setAccelerator(SWT.SHIFT | SWT.CTRL | 'P');
 		}
 
 		@Override

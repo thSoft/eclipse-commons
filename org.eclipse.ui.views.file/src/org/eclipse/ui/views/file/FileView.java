@@ -1,30 +1,40 @@
 package org.eclipse.ui.views.file;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IToolBarManager;
-import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IMemento;
+import org.eclipse.ui.IPathEditorInput;
+import org.eclipse.ui.ISelectionListener;
+import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.PageBook;
 import org.eclipse.ui.part.ViewPart;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.eclipse.ui.views.file.source.IFileViewSource;
 
 /**
  * A view that displays the file determined by its current source.
@@ -43,15 +53,13 @@ public class FileView extends ViewPart {
 
 	}
 
-	private static final String ID = "id"; //$NON-NLS-1$
+	private static final String PATH = "path"; //$NON-NLS-1$
 
-	private static final String SOURCE = "source"; //$NON-NLS-1$
+	private static final String LINKED = "linked"; //$NON-NLS-1$
 
 	private IFileViewType<? super Composite> type;
 
 	private final List<String> extensions = new ArrayList<String>();
-
-	private final List<FileViewSourceDescriptor> sourceDescriptors = new ArrayList<FileViewSourceDescriptor>();
 
 	private String errorMessage = "File not found";
 
@@ -61,11 +69,7 @@ public class FileView extends ViewPart {
 
 	private IFile file;
 
-	private FileViewSourceDescriptor sourceDescriptor;
-
 	private Control errorPage;
-
-	private FileViewSourceMenu sourceMenu;
 
 	private IToolBarManager toolbar;
 
@@ -73,7 +77,8 @@ public class FileView extends ViewPart {
 
 	private IContributionItem[] toolbarContributions;
 
-	@SuppressWarnings("unchecked")
+	private boolean linked = true;
+
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		super.init(site, memento);
@@ -84,7 +89,9 @@ public class FileView extends ViewPart {
 				try {
 					Object type = configurationElement.createExecutableExtension("type"); //$NON-NLS-1$
 					if (type instanceof IFileViewType) {
-						this.setType((IFileViewType<? super Composite>)type);
+						@SuppressWarnings("unchecked")
+						IFileViewType<? super Composite> fileViewType = (IFileViewType<? super Composite>)type;
+						this.setType(fileViewType);
 					}
 				} catch (CoreException e) {
 					Activator.logError("Can't initialize file view type", e);
@@ -93,32 +100,6 @@ public class FileView extends ViewPart {
 				for (IConfigurationElement extensionElement : configurationElement.getChildren("fileExtension")) { //$NON-NLS-1$
 					extensions.add(extensionElement.getAttribute("extension")); //$NON-NLS-1$
 				}
-				// Sources
-				for (IConfigurationElement sourceElement : configurationElement.getChildren(SOURCE)) {
-					String sourceId = sourceElement.getAttribute(ID);
-					IConfigurationElement[] sourceConfigurationElements = Platform.getExtensionRegistry().getConfigurationElementsFor(Activator.getId(), "sources"); //$NON-NLS-1$
-					for (IConfigurationElement sourceConfigurationElement : sourceConfigurationElements) {
-						if (sourceConfigurationElement.getAttribute(ID).equals(sourceId)) {
-							try {
-								// Class
-								Object source = sourceConfigurationElement.createExecutableExtension("class"); //$NON-NLS-1$
-								if (source instanceof IFileViewSource) {
-									final FileViewSourceDescriptor sourceDescriptor = new FileViewSourceDescriptor();
-									sourceDescriptors.add(sourceDescriptor);
-									sourceDescriptor.source = (IFileViewSource)source;
-									// Icon
-									String pluginId = sourceConfigurationElement.getDeclaringExtension().getNamespaceIdentifier();
-									String imageFilePath = sourceConfigurationElement.getAttribute("icon"); //$NON-NLS-1$
-									sourceDescriptor.icon = AbstractUIPlugin.imageDescriptorFromPlugin(pluginId, imageFilePath);
-									// Toolbar contributions
-									toolbarContributions = getType().getToolbarContributions();
-								}
-							} catch (CoreException e) {
-								Activator.logError("Can't instantiate file view source", e);
-							}
-						}
-					}
-				}
 				// Error message
 				String errorMessage = configurationElement.getAttribute("errorMessage"); //$NON-NLS-1$
 				if (errorMessage != null) {
@@ -126,34 +107,38 @@ public class FileView extends ViewPart {
 				}
 			}
 		}
-		// Source menu
-		sourceMenu = new FileViewSourceMenu(this, site.getId());
+		// Toolbar
 		toolbar = site.getActionBars().getToolBarManager();
-		toolbar.add(sourceMenu);
-		// Restore current source
+		toolbarContributions = getType().getToolbarContributions();
+		// Restore settings
 		if (memento != null) {
-			String sourceClassName = memento.getString(SOURCE);
-			for (FileViewSourceDescriptor sourceDescriptor : sourceDescriptors) {
-				if (sourceDescriptor.source.getClass().getName().equals(sourceClassName)) {
-					setSourceDescriptor(sourceDescriptor);
-				}
+			// Path
+			String pathString = memento.getString(PATH);
+			if (pathString != null) {
+				IPath path = Path.fromPortableString(pathString);
+				IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(path);
+				setFile(file);
 			}
-		}
-		if ((getSourceDescriptor() == null) && !sourceDescriptors.isEmpty()) {
-			setSourceDescriptor(sourceDescriptors.get(0));
+			// Linked
+			Boolean linked = memento.getBoolean(LINKED);
+			if (linked != null) {
+				this.linked = linked;
+			}
+			toggleLinkedAction.setChecked(this.linked);
 		}
 	}
 
 	@Override
 	public void createPartControl(Composite parent) {
-		// Page book
 		pageBook = new PageBook(parent, SWT.NONE);
-		// Error page
 		errorPage = new ErrorPage(pageBook, errorMessage);
-		// Activate source
-		if (getSourceDescriptor() != null) {
-			getSourceDescriptor().source.init(this, true);
+		toolbar.add(toggleLinkedAction);
+		if (getFile() != null) {
+			show(getFile());
 		}
+		// Selection listener
+		ISelectionService selectionService = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getSelectionService();
+		selectionService.addPostSelectionListener(selectionListener);
 	}
 
 	@Override
@@ -163,9 +148,8 @@ public class FileView extends ViewPart {
 
 	@Override
 	public void saveState(IMemento memento) {
-		if (getSourceDescriptor() != null) {
-			memento.putString(SOURCE, getSourceDescriptor().source.getClass().getName());
-		}
+		memento.putString(PATH, file == null ? null : file.getLocation().toPortableString());
+		memento.putBoolean(LINKED, linked);
 	}
 
 	@Override
@@ -178,8 +162,8 @@ public class FileView extends ViewPart {
 		super.dispose();
 	}
 
-	public String[] getExtensions() {
-		return extensions.toArray(new String[0]);
+	public List<String> getExtensions() {
+		return extensions;
 	}
 
 	public void hide() {
@@ -202,11 +186,9 @@ public class FileView extends ViewPart {
 			// Fill toolbar for the first time
 			if (!toolbarFilled) {
 				toolbarFilled = true;
-				String sourceMenuId = sourceMenu.getId();
 				for (IContributionItem toolbarContribution : toolbarContributions) {
-					toolbar.insertBefore(sourceMenuId, toolbarContribution);
+					toolbar.add(toolbarContribution);
 				}
-				toolbar.insertBefore(sourceMenuId, new Separator());
 				toolbar.update(true);
 			}
 		}
@@ -222,7 +204,7 @@ public class FileView extends ViewPart {
 			}
 			pages.put(file, page);
 		} else {
-			pageBook.showPage(errorPage);
+			showErrorPage();
 		}
 	}
 
@@ -230,13 +212,23 @@ public class FileView extends ViewPart {
 		if (pageBook != null) {
 			Composite page = getPage();
 			if (page == null) {
-				pageBook.showPage(errorPage);
+				showErrorPage();
 			} else {
 				pageBook.showPage(page);
 				getType().pageShown(page);
+				for (IContributionItem contributionItem : toolbarContributions) {
+					contributionItem.setVisible(true);
+				}
 			}
 		}
 		refreshToolbarContributions();
+	}
+
+	private void showErrorPage() {
+		pageBook.showPage(errorPage);
+		for (IContributionItem contributionItem : toolbarContributions) {
+			contributionItem.setVisible(false);
+		}
 	}
 
 	private void refreshToolbarContributions() {
@@ -275,39 +267,13 @@ public class FileView extends ViewPart {
 		return pages.get(getFile());
 	}
 
-	public void setSourceDescriptor(FileViewSourceDescriptor sourceDescriptor) {
-		if (this.sourceDescriptor != null) {
-			this.sourceDescriptor.source.done();
-		}
-		this.sourceDescriptor = sourceDescriptor;
-		if (pageBook != null) {
-			sourceDescriptor.source.init(this, false);
-		}
-		refreshSourceMenu();
-	}
-
-	private void refreshSourceMenu() {
-		if (sourceMenu != null) {
-			sourceMenu.setToolTipText(MessageFormat.format("{0} ({1})", getSourceDescriptor().source.getLongName(), getFile() == null ? "none" : getFile().getFullPath()));
-			sourceMenu.setImageDescriptor(getSourceDescriptor().icon);
-		}
-	}
-
-	public FileViewSourceDescriptor getSourceDescriptor() {
-		return sourceDescriptor;
-	}
-
 	private void setFile(IFile file) {
 		this.file = file;
-		refreshSourceMenu();
+		// TODO refresh file indicator
 	}
 
 	public IFile getFile() {
 		return file;
-	}
-
-	public FileViewSourceDescriptor[] getSourceDescriptors() {
-		return sourceDescriptors.toArray(new FileViewSourceDescriptor[0]);
 	}
 
 	private void setType(IFileViewType<? super Composite> type) {
@@ -317,5 +283,50 @@ public class FileView extends ViewPart {
 	public IFileViewType<? super Composite> getType() {
 		return type;
 	}
+
+	private final ISelectionListener selectionListener = new ISelectionListener() {
+
+		@Override
+		public void selectionChanged(IWorkbenchPart part, ISelection selection) {
+			if (linked) {
+				IFile selectedFile = null;
+				if (selection instanceof IStructuredSelection) {
+					IStructuredSelection structuredSelection = (IStructuredSelection)selection;
+					Object selectedElement = structuredSelection.getFirstElement();
+					if (selectedElement instanceof IFile) {
+						selectedFile = (IFile)selectedElement;
+					}
+				} else if (part instanceof EditorPart) {
+					EditorPart editorPart = (EditorPart)part;
+					IEditorInput editorInput = editorPart.getEditorInput();
+					if (editorInput instanceof IPathEditorInput) {
+						IPathEditorInput pathEditorInput = (IPathEditorInput)editorInput;
+						IPath locationPath = pathEditorInput.getPath();
+						selectedFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(locationPath);
+					}
+				}
+				if (selectedFile != null) {
+					IFile fileToView = getType().getFile(selectedFile);
+					if (getExtensions().contains(fileToView.getFileExtension())) {
+						show(fileToView);
+					}
+				}
+			}
+		}
+
+	};
+
+	private final IAction toggleLinkedAction = new Action("Link with Editor and Selection", IAction.AS_CHECK_BOX) {
+
+		{
+			setImageDescriptor(Activator.getImageDescriptor("icons/Link.png"));
+		}
+
+		@Override
+		public void run() {
+			linked = !linked;
+		}
+
+	};
 
 }

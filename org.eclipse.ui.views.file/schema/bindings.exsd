@@ -23,21 +23,21 @@
          <attribute name="point" type="string" use="required">
             <annotation>
                <documentation>
-                  
+
                </documentation>
             </annotation>
          </attribute>
          <attribute name="id" type="string">
             <annotation>
                <documentation>
-                  
+
                </documentation>
             </annotation>
          </attribute>
          <attribute name="name" type="string">
             <annotation>
                <documentation>
-                  
+
                </documentation>
                <appinfo>
                   <meta.attribute translatable="true"/>
@@ -52,20 +52,19 @@
          <sequence minOccurs="0" maxOccurs="unbounded">
             <choice>
                <element ref="fileExtension"/>
-               <element ref="source"/>
             </choice>
          </sequence>
          <attribute name="viewId" type="string" use="required">
             <annotation>
                <documentation>
-                  
+
                </documentation>
             </annotation>
          </attribute>
          <attribute name="type" type="string" use="required">
             <annotation>
                <documentation>
-                  
+
                </documentation>
                <appinfo>
                   <meta.attribute kind="java" basedOn=":org.eclipse.ui.views.file.IFileViewType"/>
@@ -75,7 +74,7 @@
          <attribute name="errorMessage" type="string">
             <annotation>
                <documentation>
-                  
+
                </documentation>
                <appinfo>
                   <meta.attribute translatable="true"/>
@@ -90,23 +89,8 @@
          <attribute name="extension" type="string">
             <annotation>
                <documentation>
-                  
-               </documentation>
-            </annotation>
-         </attribute>
-      </complexType>
-   </element>
 
-   <element name="source">
-      <complexType>
-         <attribute name="id" type="string" use="required">
-            <annotation>
-               <documentation>
-                  
                </documentation>
-               <appinfo>
-                  <meta.attribute kind="identifier" basedOn="org.eclipse.ui.views.file.sources/source/@id"/>
-               </appinfo>
             </annotation>
          </attribute>
       </complexType>

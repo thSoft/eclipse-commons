@@ -1,6 +1,5 @@
 package org.eclipse.ui.views.file;
 
-import java.util.Arrays;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -38,7 +37,7 @@ public class ViewedFileChangeListener implements IResourceChangeListener {
 								if (view instanceof FileView) {
 									FileView fileView = (FileView)view;
 									IFile file = (IFile)resource;
-									if (Arrays.asList(fileView.getExtensions()).contains(file.getFileExtension())) {
+									if (fileView.getExtensions().contains(file.getFileExtension())) {
 										fileView.reload(file);
 									}
 								}

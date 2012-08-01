@@ -4,8 +4,7 @@ Bundle-Name: File View
 Bundle-SymbolicName: org.eclipse.ui.views.file;singleton:=true
 Bundle-Version: 0.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: org.eclipse.ui.views.file,
- org.eclipse.ui.views.file.source
+Export-Package: org.eclipse.ui.views.file
 Require-Bundle: org.eclipse.core.resources;bundle-version="3.6.0";visibility:=reexport,
  org.eclipse.ui;bundle-version="3.6.0",
  org.eclipse.core.runtime;bundle-version="3.6.0",

@@ -4,6 +4,7 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
@@ -39,6 +40,14 @@ public class Activator extends AbstractUIPlugin {
 	 */
 	public static String getId() {
 		return getInstance().getBundle().getSymbolicName();
+	}
+
+	/**
+	 * Returns an image descriptor for the image file at the given plug-in
+	 * relative path.
+	 */
+	public static ImageDescriptor getImageDescriptor(String path) {
+		return imageDescriptorFromPlugin(getId(), path);
 	}
 
 	/**

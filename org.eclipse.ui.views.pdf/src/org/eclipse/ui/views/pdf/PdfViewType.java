@@ -55,4 +55,9 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 		page.closeFile();
 	}
 
+	@Override
+	public IFile getFile(IFile sourceFile) {
+		return sourceFile;
+	}
+
 }

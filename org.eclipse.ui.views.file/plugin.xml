@@ -2,18 +2,4 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension-point id="bindings" name="File View Bindings" schema="schema/bindings.exsd"/>
-   <extension-point id="sources" name="File View Sources" schema="schema/sources.exsd"/>
-   <extension
-         point="org.eclipse.ui.views.file.sources">
-      <source
-            class="org.eclipse.ui.views.file.source.DirectFileViewSource"
-            icon="icons/Direct.png"
-            id="org.eclipse.ui.views.file.sources.Direct">
-      </source>
-      <source
-            class="org.eclipse.ui.views.file.source.SelectedFileViewSource"
-            icon="icons/Selected.png"
-            id="org.eclipse.ui.views.file.sources.Selected">
-      </source>
-   </extension>
 </plugin>

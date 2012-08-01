@@ -36,4 +36,9 @@ public interface IFileViewType<P extends Composite> {
 	 */
 	void pageClosed(P page);
 
+	/**
+	 * Returns the file to view based on the given file.
+	 */
+	IFile getFile(IFile sourceFile);
+
 }

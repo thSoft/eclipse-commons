@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse.commons"
       label="Eclipse Commons"
-      version="0.0.0.qualifier">
+      version="0.1.0.qualifier">
 
    <license>
       EPL/LGPL

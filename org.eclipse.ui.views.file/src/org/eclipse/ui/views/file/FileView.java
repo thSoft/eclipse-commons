@@ -178,6 +178,7 @@ public class FileView extends ViewPart {
 		if (!pageBook.isDisposed()) {
 			pageBook.setVisible(true);
 			setFile(file);
+			setTitleToolTip(file.getFullPath().toString());
 			Composite page = getPage();
 			if ((page == null) || page.isDisposed()) {
 				load(file);

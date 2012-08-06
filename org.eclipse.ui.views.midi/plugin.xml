@@ -2,12 +2,15 @@
 <?eclipse version="3.0"?>
 <plugin>
       <extension point="org.eclipse.ui.commands">
-            <command id="org.eclipse.ui.views.midi.commands.PlayPause" name="Play/Pause">
-            	<commandParameter id="org.eclipse.ui.views.midi.commands.PlayPause.view" name="View"/>
+            <category id="org.eclipse.ui.views.midi.commandCategories.Midi" name="MIDI"/>
+            <command id="org.eclipse.ui.views.midi.commands.PlayPause" name="Play/Pause" categoryId="org.eclipse.ui.views.midi.commandCategories.Midi">
+            	<commandParameter id="org.eclipse.ui.views.midi.commands.PlayPause.view" name="View" optional="false" values="org.eclipse.ui.views.midi.PlayPauseViewParameterValues"/>
             </command>
       </extension>
-            <extension point="org.eclipse.ui.handlers">
-                <handler class="org.eclipse.ui.views.midi.PlayPauseHandler" commandId="org.eclipse.ui.views.midi.commands.PlayPause">
-            </handler>
+      <extension point="org.eclipse.ui.handlers">
+            <handler class="org.eclipse.ui.views.midi.PlayPauseHandler" commandId="org.eclipse.ui.views.midi.commands.PlayPause"/>
+      </extension>
+      <extension point="org.eclipse.ui.commandImages">
+            <image commandId="org.eclipse.ui.views.midi.commands.PlayPause" icon="icons/Play.png"/>
       </extension>
 </plugin>

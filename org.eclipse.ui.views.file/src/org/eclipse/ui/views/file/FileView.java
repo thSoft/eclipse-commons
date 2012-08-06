@@ -1,5 +1,6 @@
 package org.eclipse.ui.views.file;
 
+import static java.text.MessageFormat.format;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +41,12 @@ import org.eclipse.ui.part.ViewPart;
  * A view that displays the file determined by its current source.
  */
 public class FileView extends ViewPart {
+
+	public static final String BINDINGS = "bindings"; //$NON-NLS-1$
+
+	public static final String VIEW_ID = "viewId";
+
+	public static final String TYPE = "type"; //$NON-NLS-1$
 
 	private static class ErrorPage extends Composite {
 
@@ -82,19 +89,19 @@ public class FileView extends ViewPart {
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		super.init(site, memento);
-		IConfigurationElement[] configurationElements = Platform.getExtensionRegistry().getConfigurationElementsFor(Activator.getId(), "bindings"); //$NON-NLS-1$
+		IConfigurationElement[] configurationElements = Platform.getExtensionRegistry().getConfigurationElementsFor(Activator.getId(), BINDINGS);
 		for (IConfigurationElement configurationElement : configurationElements) {
-			if (site.getId().equals(configurationElement.getAttribute("viewId"))) { //$NON-NLS-1$
+			if (site.getId().equals(configurationElement.getAttribute(VIEW_ID))) {
 				// Type
 				try {
-					Object type = configurationElement.createExecutableExtension("type"); //$NON-NLS-1$
+					Object type = configurationElement.createExecutableExtension(TYPE);
 					if (type instanceof IFileViewType) {
 						@SuppressWarnings("unchecked")
 						IFileViewType<? super Composite> fileViewType = (IFileViewType<? super Composite>)type;
 						this.setType(fileViewType);
 					}
 				} catch (CoreException e) {
-					Activator.logError("Can't initialize file view type", e);
+					Activator.logError(format("Can''t initialize type of file view {0}", site.getId()), e);
 				}
 				// Extensions
 				for (IConfigurationElement extensionElement : configurationElement.getChildren("fileExtension")) { //$NON-NLS-1$

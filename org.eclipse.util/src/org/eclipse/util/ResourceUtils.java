@@ -38,7 +38,11 @@ public class ResourceUtils {
 	 * is replaced with the given extension.
 	 */
 	public static IFile replaceExtension(IFile file, String extension) {
-		IPath path = file.getFullPath();
+		IPath newPath = replaceExtension(file.getFullPath(), extension);
+		return ResourcesPlugin.getWorkspace().getRoot().getFile(newPath);
+	}
+
+	public static IPath replaceExtension(IPath path, String extension) {
 		IPath newPath = path.removeFileExtension();
 		final String dot = "."; //$NON-NLS-1$
 		if (path.lastSegment().startsWith(dot)) {
@@ -46,7 +50,7 @@ public class ResourceUtils {
 		} else {
 			newPath = newPath.addFileExtension(extension);
 		}
-		return ResourcesPlugin.getWorkspace().getRoot().getFile(newPath);
+		return newPath;
 	}
 
 }

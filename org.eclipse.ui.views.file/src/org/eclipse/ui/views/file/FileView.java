@@ -131,8 +131,8 @@ public class FileView extends ViewPart {
 			if (linked != null) {
 				this.linked = linked;
 			}
-			toggleLinkedAction.setChecked(this.linked);
 		}
+		toggleLinkedAction.setChecked(this.linked);
 	}
 
 	@Override

@@ -77,6 +77,8 @@ public class FileView extends ViewPart {
 	private IFile file;
 
 	private Control errorPage;
+	
+	private Label fileNameDisplay;
 
 	private IToolBarManager toolbar;
 
@@ -137,7 +139,23 @@ public class FileView extends ViewPart {
 
 	@Override
 	public void createPartControl(Composite parent) {
+		GridLayout layout = new GridLayout();
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.horizontalSpacing = 0;
+		layout.verticalSpacing = 0;
+		parent.setLayout(layout);
+		fileNameDisplay = new Label(parent, SWT.NONE);
+		GridData fileNameDisplayLayoutData = new GridData();
+		fileNameDisplayLayoutData.horizontalAlignment = GridData.FILL;
+		fileNameDisplay.setLayoutData(fileNameDisplayLayoutData);
 		pageBook = new PageBook(parent, SWT.NONE);
+		GridData pageBookLayoutData = new GridData();
+		pageBookLayoutData.horizontalAlignment = GridData.FILL;
+		pageBookLayoutData.verticalAlignment = GridData.FILL;
+		pageBookLayoutData.grabExcessHorizontalSpace = true;
+		pageBookLayoutData.grabExcessVerticalSpace = true;
+		pageBook.setLayoutData(pageBookLayoutData);
 		errorPage = new ErrorPage(pageBook, errorMessage);
 		toolbar.add(toggleLinkedAction);
 		if (getFile() != null) {
@@ -199,6 +217,9 @@ public class FileView extends ViewPart {
 				}
 				toolbar.update(true);
 			}
+		}
+		if (!fileNameDisplay.isDisposed()) {
+			fileNameDisplay.setText(file.getFullPath().toOSString());
 		}
 	}
 
@@ -277,7 +298,6 @@ public class FileView extends ViewPart {
 
 	private void setFile(IFile file) {
 		this.file = file;
-		// TODO refresh file indicator
 	}
 
 	public IFile getFile() {

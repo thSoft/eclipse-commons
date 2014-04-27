@@ -60,7 +60,7 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The control displaying the current page of the PDF file.
 	 */
-	private Composite pdfDisplay;
+	private final Composite pdfDisplay;
 
 	/**
 	 * The PDF engine which renders the pages.

@@ -20,7 +20,7 @@ public class PdfAnnotationHyperlink extends Composite {
 			@Override
 			public void mouseDown(MouseEvent e) {
 				TextEditorUtils.revealPosition(editorInput, annotation.lineNumber, annotation.columnNumber, 1);
-			};
+			}
 
 		});
 	}

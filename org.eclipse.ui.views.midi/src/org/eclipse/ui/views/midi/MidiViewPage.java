@@ -129,6 +129,14 @@ public class MidiViewPage extends ScrolledComposite {
 	public boolean isPlaying() {
 		return sequencer.isRunning();
 	}
+	
+	public void togglePlayback() {
+		if (isPlaying()) {
+			pause();
+		} else {
+			play();
+		}
+	}
 
 	// Time
 

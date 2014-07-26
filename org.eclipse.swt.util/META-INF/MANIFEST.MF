@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SWT Utilities
 Bundle-SymbolicName: org.eclipse.swt.util
 Bundle-Version: 0.0.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: org.eclipse.swt.util
 Require-Bundle: org.eclipse.swt;bundle-version="3.5.0"
 Bundle-Vendor: Open Source Community

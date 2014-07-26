@@ -1,15 +1,66 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<feature id="org.eclipse.commons" label="Eclipse Commons" version="0.1.0.qualifier">
-  <license>
+<feature
+      id="org.eclipse.commons"
+      label="Eclipse Commons"
+      version="0.1.0.qualifier">
+
+   <license>
       EPL/LGPL
    </license>
-  <plugin id="com.google.common" download-size="0" install-size="0" version="0.0.0"/>
-  <plugin id="javax.util" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
-  <plugin id="org.eclipse.swt.util" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
-  <plugin id="org.eclipse.ui.views.pdf" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
-  <plugin id="org.eclipse.util" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
-  <plugin id="org.jpedal" download-size="0" install-size="0" version="0.0.0"/>
-  <plugin id="org.eclipse.ui.views.file" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
-  <plugin id="org.eclipse.emf.util" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
-  <plugin id="org.eclipse.ui.views.midi" download-size="0" install-size="0" version="0.0.0" unpack="false"/>
+
+   <plugin
+         id="javax.util"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.swt.util"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.ui.views.pdf"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.util"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.jpedal"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+   <plugin
+         id="org.eclipse.ui.views.file"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.emf.util"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.ui.views.midi"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
 </feature>

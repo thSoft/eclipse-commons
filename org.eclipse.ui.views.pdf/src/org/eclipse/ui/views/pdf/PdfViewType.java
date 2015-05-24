@@ -1,5 +1,8 @@
 package org.eclipse.ui.views.pdf;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.ui.part.PageBook;
@@ -10,9 +13,13 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	public static final String EXTENSION = "pdf"; //$NON-NLS-1$
 
+	Map<IFile, PdfViewPage> pages=new WeakHashMap<IFile,PdfViewPage>();
+	
 	@Override
 	public PdfViewPage createPage(PageBook pageBook, IFile file) throws Exception {
-		return new PdfViewPage(pageBook, file);
+		PdfViewPage result = new PdfViewPage(pageBook, file);
+		pages.put(file, result);
+		return result;
 	}
 
 	private final PdfViewToolbarManager toolbar = new PdfViewToolbarManager();
@@ -30,6 +37,14 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	public PdfViewPage getPage() {
 		return page;
+	}
+
+	public void prepareDelete(IFile file){
+		PdfViewPage view = pages.get(file);
+		if(view!=null){
+			view.closeFile();
+			pages.remove(file);
+		}
 	}
 
 	@Override

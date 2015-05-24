@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+  <extension point="org.eclipse.ltk.core.refactoring.deleteParticipants">
+    <deleteParticipant class="org.eclipse.ui.views.pdf.DeletePdfParticipant" id="org.eclipse.ui.views.pdf.deleteParticipants.File" name="Close Score View">
+      <enablement>
+        <with variable="element">
+          <instanceof value="org.eclipse.core.resources.IFile"/>
+        </with>
+      </enablement>
+    </deleteParticipant>
+    <deleteParticipant class="org.eclipse.ui.views.pdf.DeletePdfParticipant" id="org.eclipse.ui.views.pdf.deleteParticipants.Folder" name="Close Score View">
+      <enablement>
+        <with variable="element">
+          <instanceof value="org.eclipse.core.resources.IFolder"/>
+        </with>
+      </enablement>
+    </deleteParticipant>
+  </extension>
+</plugin>

@@ -26,7 +26,6 @@ public class DeletePdfParticipant extends DeleteParticipant {
 	protected boolean initialize(Object element) {
 		List<IFile> filesToDelete = getFilesToDelete(element);
 		if(!filesToDelete.isEmpty()){
-//			IViewPart view = UiUtils.getWorkbenchPage().findView(ScoreViewType.ID);
 			IViewReference[] views = UiUtils.getWorkbenchPage().getViewReferences();
 			for (IViewReference ref : views) {
 				IViewPart view = ref.getView(false);
@@ -48,8 +47,9 @@ public class DeletePdfParticipant extends DeleteParticipant {
 	private List<IFile> getFilesToDelete(Object element){
 		final List<IFile> result=new ArrayList<IFile>();
 		if(element instanceof IFile){
-			if(isPdf((IFile)element)){
-				result.add((IFile)element);
+			IFile file = (IFile)element;
+			if(isPdf(file)){
+				result.add(file);
 			}
 		}else if(element instanceof IFolder){
 			try {

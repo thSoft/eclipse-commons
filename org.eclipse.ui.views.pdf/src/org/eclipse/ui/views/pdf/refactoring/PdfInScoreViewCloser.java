@@ -1,4 +1,4 @@
-package org.eclipse.ui.views.pdf;
+package org.eclipse.ui.views.pdf.refactoring;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,22 +8,17 @@ import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.ltk.core.refactoring.Change;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
-import org.eclipse.ltk.core.refactoring.participants.DeleteParticipant;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.views.file.FileView;
 import org.eclipse.ui.views.file.IFileViewType;
+import org.eclipse.ui.views.pdf.Activator;
+import org.eclipse.ui.views.pdf.PdfViewType;
 import org.eclipse.util.UiUtils;
 
-public class DeletePdfParticipant extends DeleteParticipant {
+class PdfInScoreViewCloser {
 
-	@Override
-	protected boolean initialize(Object element) {
+	PdfInScoreViewCloser(Object element) {
 		List<IFile> filesToDelete = getFilesToDelete(element);
 		if(!filesToDelete.isEmpty()){
 			IViewReference[] views = UiUtils.getWorkbenchPage().getViewReferences();
@@ -41,7 +36,6 @@ public class DeletePdfParticipant extends DeleteParticipant {
 				}
 			}
 		}
-		return false;
 	}
 
 	private List<IFile> getFilesToDelete(Object element){
@@ -76,18 +70,4 @@ public class DeletePdfParticipant extends DeleteParticipant {
 		return file.getFileExtension().equals(PdfViewType.EXTENSION);
 	}
 
-	@Override
-	public String getName() {
-		return "Close Score View";
-	}
-
-	@Override
-	public RefactoringStatus checkConditions(IProgressMonitor pm, CheckConditionsContext context) throws OperationCanceledException {
-		return new RefactoringStatus();
-	}
-
-	@Override
-	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
-		return null;
-	}
 }

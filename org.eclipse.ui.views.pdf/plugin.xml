@@ -2,19 +2,51 @@
 <?eclipse version="3.0"?>
 <plugin>
   <extension point="org.eclipse.ltk.core.refactoring.deleteParticipants">
-    <deleteParticipant class="org.eclipse.ui.views.pdf.DeletePdfParticipant" id="org.eclipse.ui.views.pdf.deleteParticipants.File" name="Close Score View">
+    <deleteParticipant class="org.eclipse.ui.views.pdf.refactoring.DeletePdfParticipant" id="org.eclipse.ui.views.pdf.deleteParticipants.File" name="Close Score View">
       <enablement>
         <with variable="element">
           <instanceof value="org.eclipse.core.resources.IFile"/>
         </with>
       </enablement>
     </deleteParticipant>
-    <deleteParticipant class="org.eclipse.ui.views.pdf.DeletePdfParticipant" id="org.eclipse.ui.views.pdf.deleteParticipants.Folder" name="Close Score View">
+    <deleteParticipant class="org.eclipse.ui.views.pdf.refactoring.DeletePdfParticipant" id="org.eclipse.ui.views.pdf.deleteParticipants.Folder" name="Close Score View">
       <enablement>
         <with variable="element">
           <instanceof value="org.eclipse.core.resources.IFolder"/>
         </with>
       </enablement>
     </deleteParticipant>
+  </extension>
+  <extension point="org.eclipse.ltk.core.refactoring.moveParticipants">
+    <moveParticipant class="org.eclipse.ui.views.pdf.refactoring.MovePdfParticipant" id="org.eclipse.ui.views.pdf.moveParticipants.File" name="Close Score View">
+      <enablement>
+        <with variable="element">
+          <instanceof value="org.eclipse.core.resources.IFile"/>
+        </with>
+      </enablement>
+    </moveParticipant>
+    <moveParticipant class="org.eclipse.ui.views.pdf.refactoring.MovePdfParticipant" id="org.eclipse.ui.views.pdf.moveParticipants.Folder" name="Close Score View">
+      <enablement>
+        <with variable="element">
+          <instanceof value="org.eclipse.core.resources.IFolder"/>
+        </with>
+      </enablement>
+    </moveParticipant>
+  </extension>
+  <extension point="org.eclipse.ltk.core.refactoring.renameParticipants">
+    <renameParticipant class="org.eclipse.ui.views.pdf.refactoring.RenamePdfParticipant" id="org.eclipse.ui.views.pdf.moveParticipants.File" name="Close Score View">
+      <enablement>
+        <with variable="element">
+          <instanceof value="org.eclipse.core.resources.IFile"/>
+        </with>
+      </enablement>
+    </renameParticipant>
+    <renameParticipant class="org.eclipse.ui.views.pdf.refactoring.RenamePdfParticipant" id="org.eclipse.ui.views.pdf.moveParticipants.Folder" name="Close Score View">
+      <enablement>
+        <with variable="element">
+          <instanceof value="org.eclipse.core.resources.IFolder"/>
+        </with>
+      </enablement>
+    </renameParticipant>
   </extension>
 </plugin>

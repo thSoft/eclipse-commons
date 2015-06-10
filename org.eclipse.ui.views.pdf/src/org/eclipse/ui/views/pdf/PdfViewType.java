@@ -13,12 +13,12 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	public static final String EXTENSION = "pdf"; //$NON-NLS-1$
 
-	Map<IFile, PdfViewPage> pages=new WeakHashMap<IFile,PdfViewPage>();
+	private final Map<IFile, PdfViewPage> pagesByFile = new WeakHashMap<IFile,PdfViewPage>();
 	
 	@Override
 	public PdfViewPage createPage(PageBook pageBook, IFile file) throws Exception {
 		PdfViewPage result = new PdfViewPage(pageBook, file);
-		pages.put(file, result);
+		pagesByFile.put(file, result);
 		return result;
 	}
 
@@ -39,11 +39,11 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 		return page;
 	}
 
-	public void prepareDelete(IFile file){
-		PdfViewPage view = pages.get(file);
-		if(view!=null){
-			view.closeFile();
-			pages.remove(file);
+	public void prepareDelete(IFile file){ // XXX workaround for Windows
+		PdfViewPage pageToClose = pagesByFile.get(file);
+		if(pageToClose!=null){
+			pageToClose.closeFile();
+			pagesByFile.remove(file);
 		}
 	}
 

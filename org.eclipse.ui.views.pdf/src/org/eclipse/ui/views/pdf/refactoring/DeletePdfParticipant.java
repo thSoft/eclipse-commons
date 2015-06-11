@@ -12,7 +12,7 @@ public class DeletePdfParticipant extends DeleteParticipant {
 
 	@Override
 	protected boolean initialize(Object element) {
-		new PdfInScoreViewCloser(element);
+		PdfViewPageCloser.releaseOpenedFiles(element);
 		return false;
 	}
 

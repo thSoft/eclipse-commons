@@ -12,7 +12,7 @@ public class RenamePdfParticipant extends RenameParticipant {
 
 	@Override
 	protected boolean initialize(Object element) {
-		new PdfInScoreViewCloser(element);
+		PdfViewPageCloser.releaseOpenedFiles(element);
 		return false;
 	}
 

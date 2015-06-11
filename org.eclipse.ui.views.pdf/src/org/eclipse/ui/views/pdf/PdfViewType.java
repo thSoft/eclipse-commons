@@ -39,7 +39,7 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 		return page;
 	}
 
-	public void prepareDelete(IFile file){
+	public void release(IFile file){
 		PdfViewPage view = pages.get(file);
 		if(view!=null){
 			view.closeFile();

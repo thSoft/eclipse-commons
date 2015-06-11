@@ -16,11 +16,13 @@ import org.eclipse.ui.views.pdf.Activator;
 import org.eclipse.ui.views.pdf.PdfViewType;
 import org.eclipse.util.UiUtils;
 
-class PdfInScoreViewCloser {
+public class PdfViewPageCloser {
 
-	PdfInScoreViewCloser(Object element) {
-		List<IFile> filesToDelete = getFilesToDelete(element);
-		if(!filesToDelete.isEmpty()){
+	private PdfViewPageCloser() {}
+
+	public static void releaseOpenedFiles(Object fileOrFolder) {
+		List<IFile> filesToRelease = getFilesToRelease(fileOrFolder);
+		if(!filesToRelease.isEmpty()){
 			IViewReference[] views = UiUtils.getWorkbenchPage().getViewReferences();
 			for (IViewReference ref : views) {
 				IViewPart view = ref.getView(false);
@@ -29,8 +31,8 @@ class PdfInScoreViewCloser {
 					IFileViewType<?> fileViewType = fileView.getType();
 					if (fileViewType instanceof PdfViewType) {
 						PdfViewType pdfViewType = (PdfViewType)fileViewType;
-						for (IFile fileToDelete : filesToDelete) {
-							pdfViewType.prepareDelete(fileToDelete);
+						for (IFile fileToRelease : filesToRelease) {
+							pdfViewType.release(fileToRelease);
 						}
 					}
 				}
@@ -38,7 +40,7 @@ class PdfInScoreViewCloser {
 		}
 	}
 
-	private List<IFile> getFilesToDelete(Object element){
+	private static List<IFile> getFilesToRelease(Object element){
 		final List<IFile> result=new ArrayList<IFile>();
 		if(element instanceof IFile){
 			IFile file = (IFile)element;
@@ -66,7 +68,7 @@ class PdfInScoreViewCloser {
 		return result;
 	}
 
-	private boolean isPdf(IFile file){
+	private static boolean isPdf(IFile file){
 		return file.getFileExtension().equals(PdfViewType.EXTENSION);
 	}
 

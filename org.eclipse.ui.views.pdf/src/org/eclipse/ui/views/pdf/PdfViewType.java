@@ -39,7 +39,7 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 		return page;
 	}
 
-	public void prepareDelete(IFile file){ // XXX workaround for Windows
+	public void release(IFile file){ // XXX workaround for Windows
 		PdfViewPage pageToClose = pagesByFile.get(file);
 		if(pageToClose!=null){
 			pageToClose.closeFile();

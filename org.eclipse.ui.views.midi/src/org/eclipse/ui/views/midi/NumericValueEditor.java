@@ -23,6 +23,9 @@ public class NumericValueEditor extends Composite {
 	public void setValue(int value, boolean callback) {
 		value = Math.max(0, Math.min(getMaximumValue(), value));
 		this.value = value;
+		if(slider.isDisposed()){
+			return;
+		}
 		slider.setSelection(value);
 		displayer.setText(MessageFormat.format("{0}/{1}", hooks.display(value), hooks.display(getMaximumValue())));
 		if (callback) {

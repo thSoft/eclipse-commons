@@ -97,7 +97,11 @@ public class MidiViewPage extends ScrolledComposite {
 	}
 
 	public void closeFile() {
+		pause();
+		synthesizer.close();
 		sequencer.close();
+		content.dispose();
+		this.dispose();
 	}
 
 	// Playback
@@ -122,8 +126,10 @@ public class MidiViewPage extends ScrolledComposite {
 	}
 
 	public void pause() {
-		sequencer.stop();
-		getPlaybackAction().setPlaying(false);
+		if(sequencer.isOpen()){
+			sequencer.stop();
+			getPlaybackAction().setPlaying(false);
+		}
 	}
 
 	public boolean isPlaying() {

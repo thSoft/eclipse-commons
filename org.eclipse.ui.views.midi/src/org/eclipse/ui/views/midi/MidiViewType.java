@@ -49,6 +49,18 @@ public class MidiViewType implements IFileViewType<MidiViewPage> {
 	@Override
 	public void pageClosed(MidiViewPage page) {
 		page.closeFile();
+		if(this.page!=null && this.page.getFile().equals(page.getFile())){
+			if(!this.page.isDisposed()){
+				this.page.closeFile();
+			}
+			setPage(null);
+		}
+		if(toolbar.getPage()!=null && toolbar.getPage().getFile().equals(page.getFile())){
+			if(!toolbar.getPage().isDisposed()){
+				toolbar.getPage().closeFile();
+			}
+			toolbar.setPage(null);
+		}
 	}
 
 	@Override

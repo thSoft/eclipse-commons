@@ -280,9 +280,7 @@ public class FileView extends ViewPart {
 
 	public void reload(IFile file) {
 		Composite oldPage = pages.get(file);
-		if (oldPage == null) {
-			load(file);
-		} else {
+		if (oldPage != null) {
 			if (file.exists()) {
 				try {
 					getType().reload(oldPage);
@@ -293,9 +291,9 @@ public class FileView extends ViewPart {
 			} else {
 				pages.put(file, null);
 			}
-		}
-		if (file.equals(getFile())) {
-			refresh();
+			if (file.equals(getFile())) {
+				refresh();
+			}
 		}
 	}
 

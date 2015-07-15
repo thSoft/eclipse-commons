@@ -70,7 +70,10 @@ public class PdfViewPage extends ScrolledComposite {
 	private final Job renderJob = new Job("Rendering PDF page") {
 
 		@Override
-		public IStatus run(IProgressMonitor monitor) {
+		public IStatus run(final IProgressMonitor monitor) {
+			if(monitor.isCanceled()){
+				return Status.CANCEL_STATUS;
+			}
 			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
 				final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
@@ -79,6 +82,9 @@ public class PdfViewPage extends ScrolledComposite {
 
 					@Override
 					public void run() {
+						if(monitor.isCanceled() || pdfDisplay.isDisposed()){
+							return;
+						}
 						Image oldImage = pdfDisplay.getBackgroundImage();
 						if (oldImage != null) {
 							oldImage.dispose();
@@ -160,8 +166,15 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	public void closeFile() {
-		pdfDecoder.closePdfFile();
+		renderJob.cancel();
+		waitForJob(renderJob);
+		loadAnnotationsJob.cancel();
+		waitForJob(loadAnnotationsJob);
 		createHyperlinksJob.cancel();
+		waitForJob(createHyperlinksJob);
+		pdfDecoder.closePdfFile();
+		pdfDisplay.dispose();
+		this.dispose();
 	}
 
 	// Navigation
@@ -323,13 +336,20 @@ public class PdfViewPage extends ScrolledComposite {
 		public IStatus run(IProgressMonitor monitor) {
 			waitForJob(renderJob);
 			annotations.clear();
+			if(monitor.isCanceled()){
+				return Status.CANCEL_STATUS;
+			}
 			AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
-			for (int page = 1; page <= getPageCount(); page++) {
+			int pageCount=getPageCount();
+			for (int page = 1; page <= pageCount; page++) {
+				if(monitor.isCanceled()){
+					break;
+				}
 				ArrayList<PdfAnnotation> annotationsOnPage = new ArrayList<PdfAnnotation>();
 				annotations.add(annotationsOnPage);
 				PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
 				if (pdfAnnotations != null) {
-					while (pdfAnnotations.hasMoreTokens()) {
+					while (pdfAnnotations.hasMoreTokens() && !monitor.isCanceled()) {
 						String key = pdfAnnotations.getNextValueAsString(true);
 						Object rawObject = formRenderer.getFormDataAsObject(key);
 						if ((rawObject != null) && (rawObject instanceof FormObject)) {
@@ -403,13 +423,18 @@ public class PdfViewPage extends ScrolledComposite {
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
 			waitForJob(loadAnnotationsJob);
+			if(monitor.isCanceled()){
+				return Status.CANCEL_STATUS;
+			}
 			Display.getDefault().syncExec(new Runnable() {
 
 				@Override
 				public void run() {
-					Control[] oldHyperlinks = pdfDisplay.getChildren();
-					for (Control oldHyperlink : oldHyperlinks) {
-						oldHyperlink.dispose();
+					if(!pdfDisplay.isDisposed()){
+						Control[] oldHyperlinks = pdfDisplay.getChildren();
+						for (Control oldHyperlink : oldHyperlinks) {
+							oldHyperlink.dispose();
+						}
 					}
 				}
 
@@ -423,20 +448,22 @@ public class PdfViewPage extends ScrolledComposite {
 
 					@Override
 					public void run() {
-						PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(pdfDisplay, annotation);
-						annotationHyperlinkMap.put(annotation, hyperlink);
-						float zoom = getZoom();
-						float left = annotation.left * zoom;
-						float right = annotation.right * zoom;
-						float width = Math.abs(right - left);
-						float top = annotation.top * zoom;
-						float bottom = annotation.bottom * zoom;
-						float height = Math.abs(bottom - top);
-						Rectangle2D.Float bounds = new Rectangle2D.Float(left, top, width, height);
-						float pageWidth = getPageWidth() * zoom;
-						float pageHeight = getPageHeight() * zoom;
-						transform(bounds, getPageRotation(), pageWidth, pageHeight);
-						hyperlink.setBounds((int)bounds.x, (int)bounds.y, (int)bounds.width, (int)bounds.height);
+						if(!pdfDisplay.isDisposed()){
+							PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(pdfDisplay, annotation);
+							annotationHyperlinkMap.put(annotation, hyperlink);
+							float zoom = getZoom();
+							float left = annotation.left * zoom;
+							float right = annotation.right * zoom;
+							float width = Math.abs(right - left);
+							float top = annotation.top * zoom;
+							float bottom = annotation.bottom * zoom;
+							float height = Math.abs(bottom - top);
+							Rectangle2D.Float bounds = new Rectangle2D.Float(left, top, width, height);
+							float pageWidth = getPageWidth() * zoom;
+							float pageHeight = getPageHeight() * zoom;
+							transform(bounds, getPageRotation(), pageWidth, pageHeight);
+							hyperlink.setBounds((int)bounds.x, (int)bounds.y, (int)bounds.width, (int)bounds.height);
+						}
 					}
 
 				});

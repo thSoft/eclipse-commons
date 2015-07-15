@@ -1,10 +1,12 @@
 package org.eclipse.ui.views.file;
 
 import static java.text.MessageFormat.format;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -185,6 +187,11 @@ public class FileView extends ViewPart {
 			}
 		}
 		super.dispose();
+		pageBook=null;
+		pages.clear();
+		ISelectionService selectionService = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getSelectionService();
+		selectionService.removePostSelectionListener(selectionListener);
+
 	}
 
 	public List<String> getExtensions() {
@@ -200,7 +207,7 @@ public class FileView extends ViewPart {
 	}
 
 	public void show(IFile file) {
-		if (!pageBook.isDisposed()) {
+		if (pageBook!=null && !pageBook.isDisposed()) {
 			pageBook.setVisible(true);
 			setFile(file);
 			setTitleToolTip(file.getFullPath().toString());
@@ -273,9 +280,7 @@ public class FileView extends ViewPart {
 
 	public void reload(IFile file) {
 		Composite oldPage = pages.get(file);
-		if (oldPage == null) {
-			load(file);
-		} else {
+		if (oldPage != null) {
 			if (file.exists()) {
 				try {
 					getType().reload(oldPage);
@@ -286,9 +291,9 @@ public class FileView extends ViewPart {
 			} else {
 				pages.put(file, null);
 			}
-		}
-		if (file.equals(getFile())) {
-			refresh();
+			if (file.equals(getFile())) {
+				refresh();
+			}
 		}
 	}
 

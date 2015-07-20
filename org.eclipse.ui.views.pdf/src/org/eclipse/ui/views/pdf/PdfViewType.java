@@ -81,9 +81,9 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 			}
 			toolbar.setPage(null);
 		}
-		for (Entry<IFile, PdfViewPage> entry : pages.entrySet()) {
+		for (Entry<IFile, PdfViewPage> entry : pagesByFile.entrySet()) {
 			if(page.equals(entry.getValue())){
-				pages.remove(entry.getKey());
+				pagesByFile.remove(entry.getKey());
 				break;
 			}
 		}

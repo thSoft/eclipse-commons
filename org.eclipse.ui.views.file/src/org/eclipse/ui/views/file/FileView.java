@@ -15,6 +15,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IToolBarManager;
@@ -27,6 +28,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IKeyBindingService;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IPathEditorInput;
 import org.eclipse.ui.ISelectionListener;
@@ -121,6 +123,13 @@ public class FileView extends ViewPart {
 		// Toolbar
 		toolbar = site.getActionBars().getToolBarManager();
 		toolbarContributions = getType().getToolbarContributions();
+		IKeyBindingService keybindingService = getSite().getKeyBindingService();
+		for (IContributionItem contrib : toolbarContributions) {
+			if(contrib instanceof ActionContributionItem){
+				IAction action = ((ActionContributionItem) contrib).getAction();
+				keybindingService.registerAction(action);
+			}
+		}
 		// Restore settings
 		if (memento != null) {
 			// Path

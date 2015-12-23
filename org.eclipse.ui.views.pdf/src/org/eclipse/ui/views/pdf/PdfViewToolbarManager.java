@@ -1,6 +1,7 @@
 package org.eclipse.ui.views.pdf;
 
 import java.text.MessageFormat;
+
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.ControlContribution;
@@ -24,6 +25,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 public class PdfViewToolbarManager {
+
+	private static final String COMMAND_ID_PREFIX="org.eclipse.ui.views.pdf.";
 
 	private PdfViewPage page;
 
@@ -75,6 +78,7 @@ public class PdfViewToolbarManager {
 		public NavigateAction(String tooltipTextFragment, String iconNameFragment) {
 			setToolTipText(MessageFormat.format("Go To {0} Page", tooltipTextFragment));
 			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + MessageFormat.format("{0}Page.png", iconNameFragment))); //$NON-NLS-1$
+			setActionDefinitionId(COMMAND_ID_PREFIX+"Navigate"+iconNameFragment);
 		}
 
 		@Override
@@ -268,6 +272,7 @@ public class PdfViewToolbarManager {
 
 		public ZoomOutAction() {
 			super("Out", "Out"); //$NON-NLS-2$
+			setActionDefinitionId(COMMAND_ID_PREFIX+"ZoomOut");
 		}
 
 		@Override
@@ -281,6 +286,7 @@ public class PdfViewToolbarManager {
 
 		public ZoomInAction() {
 			super("In", "In"); //$NON-NLS-2$
+			setActionDefinitionId(COMMAND_ID_PREFIX+"ZoomIn");
 		}
 
 		@Override
@@ -294,6 +300,7 @@ public class PdfViewToolbarManager {
 
 		public ZoomToActualSizeAction() {
 			super("To Actual Size", "ToActualSize"); //$NON-NLS-2$
+			setActionDefinitionId(COMMAND_ID_PREFIX+"ZoomNormal");
 		}
 
 		@Override
@@ -348,10 +355,15 @@ public class PdfViewToolbarManager {
 			this.fitToHeight = fitToHeight;
 			setToolTipText(MessageFormat.format("Fit To {0}", tooltipTextFragment));
 			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + MessageFormat.format("FitTo{0}.png", iconNameFragment))); //$NON-NLS-1$
+			setActionDefinitionId(COMMAND_ID_PREFIX+"Zoom"+iconNameFragment);
 		}
 
 		@Override
 		public void setChecked(boolean checked) {
+			if(checked){
+				//ensure disabling other radio buttons when using short cuts
+				disableFit();
+			}
 			if (checked != isChecked()) {
 				super.setChecked(checked);
 				PdfViewPage page = getPage();

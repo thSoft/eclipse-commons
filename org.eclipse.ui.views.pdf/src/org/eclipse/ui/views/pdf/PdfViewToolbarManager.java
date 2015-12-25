@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.views.file.ToolbarSubmenuAction;
 
 public class PdfViewToolbarManager {
 
@@ -50,12 +51,8 @@ public class PdfViewToolbarManager {
 		new CurrentPageContribution(), new PageCountContribution(),
 		new ActionContributionItem(new NextPageAction()),
 		new ActionContributionItem(new LastPageAction()), new Separator(),
-		new ActionContributionItem(new ZoomOutAction()),
-		new ActionContributionItem(new ZoomInAction()),
-		new ActionContributionItem(new ZoomToActualSizeAction()),
-		new ActionContributionItem(fitToPageAction),
-		new ActionContributionItem(fitToWidthAction),
-		new ActionContributionItem(fitToHeightAction) };
+		getZoomMenu()
+	};
 
 	public IContributionItem[] getToolbarContributions() {
 		return contributions;
@@ -250,6 +247,7 @@ public class PdfViewToolbarManager {
 
 		public ZoomAction(String tooltipTextFragment, String iconNameFragment) {
 			setToolTipText(MessageFormat.format("Zoom {0}", tooltipTextFragment));
+			setText(getToolTipText());
 			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + MessageFormat.format("Zoom{0}.png", iconNameFragment))); //$NON-NLS-1$
 		}
 
@@ -354,6 +352,7 @@ public class PdfViewToolbarManager {
 			this.fitToWidth = fitToWidth;
 			this.fitToHeight = fitToHeight;
 			setToolTipText(MessageFormat.format("Fit To {0}", tooltipTextFragment));
+			setText(getToolTipText());
 			setImageDescriptor(Activator.getImageDescriptor(ICON_PATH + MessageFormat.format("FitTo{0}.png", iconNameFragment))); //$NON-NLS-1$
 			setActionDefinitionId(COMMAND_ID_PREFIX+"Zoom"+iconNameFragment);
 		}
@@ -380,6 +379,17 @@ public class PdfViewToolbarManager {
 			}
 		}
 
+	}
+
+	private IContributionItem getZoomMenu() {
+		ToolbarSubmenuAction zoomMenu = new ToolbarSubmenuAction("Zoom", Activator.getImageDescriptor(ICON_PATH + "Zoom.png")); //$NON-NLS-2$
+		zoomMenu.addAction(new ZoomOutAction());
+		zoomMenu.addAction(new ZoomInAction());
+		zoomMenu.addAction(new ZoomToActualSizeAction());
+		zoomMenu.addAction(fitToPageAction);
+		zoomMenu.addAction(fitToWidthAction);
+		zoomMenu.addAction(fitToHeightAction);
+		return new ActionContributionItem(zoomMenu);
 	}
 
 }

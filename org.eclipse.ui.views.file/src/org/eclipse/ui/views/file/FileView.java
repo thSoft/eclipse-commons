@@ -123,13 +123,8 @@ public class FileView extends ViewPart {
 		// Toolbar
 		toolbar = site.getActionBars().getToolBarManager();
 		toolbarContributions = getType().getToolbarContributions();
-		IKeyBindingService keybindingService = getSite().getKeyBindingService();
-		for (IContributionItem contrib : toolbarContributions) {
-			if(contrib instanceof ActionContributionItem){
-				IAction action = ((ActionContributionItem) contrib).getAction();
-				keybindingService.registerAction(action);
-			}
-		}
+		registerToolbarActionShortcuts();
+		
 		// Restore settings
 		if (memento != null) {
 			// Path
@@ -146,6 +141,23 @@ public class FileView extends ViewPart {
 			}
 		}
 		toggleLinkedAction.setChecked(this.linked);
+	}
+
+	@SuppressWarnings("deprecation")
+	private void registerToolbarActionShortcuts(){
+		IKeyBindingService keybindingService = getSite().getKeyBindingService();
+		for (IContributionItem contrib : toolbarContributions) {
+			if(contrib instanceof ActionContributionItem){
+				IAction action = ((ActionContributionItem) contrib).getAction();
+				if(action instanceof ToolbarSubmenuAction){
+					for (IAction subMenuAction : ((ToolbarSubmenuAction) action).getActions()) {
+						keybindingService.registerAction(subMenuAction);
+					}
+				}else{
+					keybindingService.registerAction(action);
+				}
+			}
+		}
 	}
 
 	@Override

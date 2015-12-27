@@ -107,32 +107,32 @@
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomIn"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-           sequence="CTRL++">
+           sequence="M1++">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomOut"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-           sequence="CTRL+-">
+           sequence="M1+-">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomNormal"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-           sequence="CTRL+0">
+           sequence="M1+0">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomHeight"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-           sequence="CTRL+ARROW_UP">
+           sequence="M1+ARROW_UP">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomWidth"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-           sequence="CTRL+ARROW_RIGHT">
+           sequence="M1+ARROW_RIGHT">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomPage"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-           sequence="CTRL+ARROW_DOWN">
+           sequence="M1+ARROW_DOWN">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.NavigateFirst"

@@ -3,6 +3,8 @@ package org.eclipse.ui.views.file;
 import static java.text.MessageFormat.format;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,7 @@ import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
@@ -48,7 +51,7 @@ public class FileView extends ViewPart {
 
 	public static final String BINDINGS = "bindings"; //$NON-NLS-1$
 
-	public static final String VIEW_ID = "viewId";
+	public static final String VIEW_ID = "viewId"; //$NON-NLS-1$
 
 	public static final String TYPE = "type"; //$NON-NLS-1$
 
@@ -107,7 +110,7 @@ public class FileView extends ViewPart {
 						this.setType(fileViewType);
 					}
 				} catch (CoreException e) {
-					Activator.logError(format("Can''t initialize type of file view {0}", site.getId()), e);
+					Activator.logError(format("Can't initialize type of file view {0}", site.getId()), e);
 				}
 				// Extensions
 				for (IConfigurationElement extensionElement : configurationElement.getChildren("fileExtension")) { //$NON-NLS-1$
@@ -181,6 +184,8 @@ public class FileView extends ViewPart {
 		pageBook.setLayoutData(pageBookLayoutData);
 		errorPage = new ErrorPage(pageBook, errorMessage);
 		toolbar.add(toggleLinkedAction);
+		toolbar.add(closeAction);
+		toolbar.add(switchFileAction);
 		if (getFile() != null) {
 			show(getFile());
 		}
@@ -240,6 +245,9 @@ public class FileView extends ViewPart {
 			// Fill toolbar for the first time
 			if (!toolbarFilled) {
 				toolbarFilled = true;
+				if(toolbarContributions.length>0){
+					toolbar.add(new Separator());
+				}
 				for (IContributionItem toolbarContribution : toolbarContributions) {
 					toolbar.add(toolbarContribution);
 				}
@@ -373,7 +381,7 @@ public class FileView extends ViewPart {
 	private final IAction toggleLinkedAction = new Action("Link with Editor and Selection", IAction.AS_CHECK_BOX) {
 
 		{
-			setImageDescriptor(Activator.getImageDescriptor("icons/Link.png"));
+			setImageDescriptor(Activator.getImageDescriptor("icons/Link.png"));//$NON-NLS-1$
 		}
 
 		@Override
@@ -383,4 +391,72 @@ public class FileView extends ViewPart {
 
 	};
 
+	private final IAction closeAction= new ToolbarSubmenuAction("Close", Activator.getImageDescriptor("icons/remove.png")){//$NON-NLS-2$
+		{
+			addAction(new Action("Close all"){
+				public void run() {
+					closeAll(true);
+				};
+			});
+			addAction(new Action("Close others"){
+				public void run() {
+					closeAll(false);
+				};
+			});
+		}
+
+		private void closeAll(boolean includeCurrent){
+			List<IFile> files = new ArrayList<IFile>(pages.keySet());
+			for (IFile iFile : files) {
+				if(includeCurrent || !iFile.equals(getFile())){
+					close(iFile);
+				}
+			}
+		}
+
+		public void run() {
+			if(getFile()!=null){
+				close(getFile());
+			}
+		};
+
+		private void close(IFile file){
+			Composite composite = pages.remove(file);
+			if(composite!=null){
+				getType().pageClosed(composite);
+				if(file.equals(getFile())){
+					fileNameDisplay.setText("");//$NON-NLS-1$
+				}
+			}
+		}
+	};
+
+	private final Comparator<IFile> fileNameComparator=new Comparator<IFile>() {
+		@Override
+		public int compare(IFile o1, IFile o2) {
+			return o1.getName().compareTo(o2.getName());
+		}
+	};
+
+	private final IAction switchFileAction=new ToolbarSubmenuAction("Choose Opened Document", Activator.getImageDescriptor("icons/copy.gif")){//$NON-NLS-2$
+		@Override
+		List<IAction> getActions() {
+			List<IAction> result=new ArrayList<IAction>();
+			List<IFile> files=new ArrayList<IFile>(pages.keySet());
+			Collections.sort(files, fileNameComparator);
+			for(IFile file: files){
+				final IFile theFile=file;
+				Action action = new Action(theFile.getName()) {
+					public void run() {
+						show(theFile);
+					};
+				};
+				if(file.equals(getFile())){
+					action.setChecked(true);
+				}
+				result.add(action);
+			}
+			return result;
+		};
+	};
 }

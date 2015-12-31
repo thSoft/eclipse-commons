@@ -101,6 +101,16 @@
            id="org.eclipse.ui.views.pdf.NavigateNext"
            name="Next Page">
      </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.scroll"
+           name="Scroll">
+        <commandParameter
+              id="org.eclipse.ui.views.pdf.scrollDirection"
+              name="Scroll direction"
+              optional="false">
+        </commandParameter>
+     </command>
   </extension>
   <extension
         point="org.eclipse.ui.bindings">
@@ -154,5 +164,52 @@
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="PAGE_UP">
      </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.scroll"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="ARROW_DOWN">
+        <parameter
+              id="org.eclipse.ui.views.pdf.scrollDirection"
+              value="d"></parameter>
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.scroll"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="ARROW_UP">
+        <parameter
+              id="org.eclipse.ui.views.pdf.scrollDirection"
+              value="u"></parameter>
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.scroll"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="ARROW_LEFT">
+        <parameter
+              id="org.eclipse.ui.views.pdf.scrollDirection"
+              value="l"></parameter>
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.scroll"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="ARROW_RIGHT">
+        <parameter
+              id="org.eclipse.ui.views.pdf.scrollDirection"
+              value="r"></parameter>
+     </key>
+  </extension>
+  <extension
+        point="org.eclipse.ui.handlers">
+     <handler
+           class="org.eclipse.ui.views.pdf.PdfViewScrollHandler"
+           commandId="org.eclipse.ui.views.pdf.scroll">
+        <activeWhen>
+           <with
+                 variable="activePart">
+              <instanceof
+                    value="org.eclipse.ui.views.file.FileView">
+              </instanceof>
+           </with>
+        </activeWhen>
+     </handler>
   </extension>
 </plugin>

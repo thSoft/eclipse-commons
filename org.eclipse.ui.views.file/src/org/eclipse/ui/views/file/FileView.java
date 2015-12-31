@@ -201,7 +201,7 @@ public class FileView extends ViewPart {
 
 	@Override
 	public void saveState(IMemento memento) {
-		memento.putString(PATH, file == null ? null : file.getLocation().toPortableString());
+		memento.putString(PATH, (file == null || file.getLocation() == null) ? null : file.getLocation().toPortableString());
 		memento.putBoolean(LINKED, linked);
 	}
 

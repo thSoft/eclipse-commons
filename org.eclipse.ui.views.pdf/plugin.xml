@@ -105,11 +105,6 @@
            categoryId="org.elysium.ui.commandCategories.LilyPond"
            id="org.eclipse.ui.views.pdf.scroll"
            name="Scroll">
-        <commandParameter
-              id="org.eclipse.ui.views.pdf.scrollDirection"
-              name="Scroll direction"
-              optional="false">
-        </commandParameter>
      </command>
   </extension>
   <extension
@@ -168,33 +163,21 @@
            commandId="org.eclipse.ui.views.pdf.scroll"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="ARROW_DOWN">
-        <parameter
-              id="org.eclipse.ui.views.pdf.scrollDirection"
-              value="d"></parameter>
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.scroll"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="ARROW_UP">
-        <parameter
-              id="org.eclipse.ui.views.pdf.scrollDirection"
-              value="u"></parameter>
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.scroll"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="ARROW_LEFT">
-        <parameter
-              id="org.eclipse.ui.views.pdf.scrollDirection"
-              value="l"></parameter>
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.scroll"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="ARROW_RIGHT">
-        <parameter
-              id="org.eclipse.ui.views.pdf.scrollDirection"
-              value="r"></parameter>
      </key>
   </extension>
   <extension

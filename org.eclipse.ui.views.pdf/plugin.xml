@@ -49,4 +49,150 @@
       </enablement>
     </renameParticipant>
   </extension>
+  <extension
+        point="org.eclipse.ui.commands">
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.ZoomIn"
+           name="Zoom In">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.ZoomOut"
+           name="Zoom Out">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.ZoomNormal"
+           name="Zoom Normal">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.ZoomPage"
+           name="Fit Page">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.ZoomHeight"
+           name="Fit Height">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.ZoomWidth"
+           name="Fit Width">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.NavigateFirst"
+           name="First Page">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.NavigateLast"
+           name="Last Page">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.NavigatePrevious"
+           name="Previous Page">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.NavigateNext"
+           name="Next Page">
+     </command>
+     <command
+           categoryId="org.elysium.ui.commandCategories.LilyPond"
+           id="org.eclipse.ui.views.pdf.scroll"
+           name="Scroll">
+     </command>
+  </extension>
+  <extension
+        point="org.eclipse.ui.bindings">
+     <key
+           commandId="org.eclipse.ui.views.pdf.ZoomIn"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="M1++">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.ZoomOut"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="M1+-">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.ZoomNormal"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="M1+0">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.ZoomHeight"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="M1+ARROW_UP">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.ZoomWidth"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="M1+ARROW_RIGHT">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.ZoomPage"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="M1+ARROW_DOWN">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.NavigateFirst"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="HOME">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.NavigateLast"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="END">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.NavigateNext"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="PAGE_DOWN">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.NavigatePrevious"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="PAGE_UP">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.scroll"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="ARROW_DOWN">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.scroll"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="ARROW_UP">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.scroll"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="ARROW_LEFT">
+     </key>
+     <key
+           commandId="org.eclipse.ui.views.pdf.scroll"
+           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+           sequence="ARROW_RIGHT">
+     </key>
+  </extension>
+  <extension
+        point="org.eclipse.ui.handlers">
+     <handler
+           class="org.eclipse.ui.views.pdf.PdfViewScrollHandler"
+           commandId="org.eclipse.ui.views.pdf.scroll">
+        <activeWhen>
+           <with
+                 variable="activePart">
+              <instanceof
+                    value="org.eclipse.ui.views.file.FileView">
+              </instanceof>
+           </with>
+        </activeWhen>
+     </handler>
+  </extension>
 </plugin>

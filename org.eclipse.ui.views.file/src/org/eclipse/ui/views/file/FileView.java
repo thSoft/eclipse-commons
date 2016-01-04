@@ -438,7 +438,7 @@ public class FileView extends ViewPart {
 		}
 	};
 
-	private final IAction switchFileAction=new ToolbarSubmenuAction("Choose Opened Document", Activator.getImageDescriptor("icons/copy.gif")){//$NON-NLS-2$
+	private final IAction switchFileAction=new ToolbarSubmenuAction("Choose Opened Document", Activator.getImageDescriptor("icons/documents.png")){//$NON-NLS-2$
 		@Override
 		List<IAction> getActions() {
 			List<IAction> result=new ArrayList<IAction>();

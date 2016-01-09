@@ -426,6 +426,7 @@ public class FileView extends ViewPart {
 				getType().pageClosed(composite);
 				if(file.equals(getFile())){
 					fileNameDisplay.setText("");//$NON-NLS-1$
+					setFile(null);
 				}
 			}
 		}

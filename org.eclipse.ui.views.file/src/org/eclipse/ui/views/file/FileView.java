@@ -22,6 +22,7 @@ import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
@@ -129,16 +130,17 @@ public class FileView extends ViewPart {
 		registerToolbarActionShortcuts();
 		
 		// Restore settings
-		if (memento != null) {
+		IDialogSettings dialogSettings = Activator.getInstance().getDialogSettings();
+		if (dialogSettings != null) {
 			// Path
-			String pathString = memento.getString(PATH);
+			String pathString = dialogSettings.get(PATH);
 			if (pathString != null) {
 				IPath path = Path.fromPortableString(pathString);
 				IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(path);
 				setFile(file);
 			}
 			// Linked
-			Boolean linked = memento.getBoolean(LINKED);
+			Boolean linked = dialogSettings.getBoolean(LINKED);
 			if (linked != null) {
 				this.linked = linked;
 			}
@@ -199,14 +201,17 @@ public class FileView extends ViewPart {
 		pageBook.setFocus();
 	}
 
-	@Override
-	public void saveState(IMemento memento) {
-		memento.putString(PATH, (file == null || file.getLocation() == null) ? null : file.getLocation().toPortableString());
-		memento.putBoolean(LINKED, linked);
+	private void saveSettings() {
+		IDialogSettings dialogSettings = Activator.getInstance().getDialogSettings();
+		if(dialogSettings!=null){
+			dialogSettings.put(PATH, (file == null || file.getLocation() == null) ? null : file.getLocation().toPortableString());
+			dialogSettings.put(LINKED, linked);
+		}
 	}
 
 	@Override
 	public void dispose() {
+		saveSettings();
 		for (Composite page : pages.values()) {
 			if (page != null) {
 				getType().pageClosed(page);

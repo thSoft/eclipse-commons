@@ -87,7 +87,8 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public boolean isEnabled() {
-			return getPage()!=null && getPage().isPageValid(getNewPage());
+			int newPage=getNewPage();
+			return getPage()!=null && getPage().isPageValid(newPage) && getPage().getPage()!=newPage;
 		}
 
 	}

@@ -87,7 +87,7 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public boolean isEnabled() {
-			return getPage().isPageValid(getNewPage());
+			return getPage()!=null && getPage().isPageValid(getNewPage());
 		}
 
 	}
@@ -178,6 +178,9 @@ public class PdfViewToolbarManager {
 
 				@Override
 				public void keyPressed(KeyEvent event) {
+					if(getPage()==null){
+						return;
+					}
 					if ((event.keyCode == SWT.CR) && (text.getText().length() > 0)) {
 						getPage().setPage(Integer.parseInt(text.getText()));
 					}
@@ -261,7 +264,7 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public boolean isEnabled() {
-			return getPage().isZoomValid(getNewZoom());
+			return getPage()!=null && getPage().isZoomValid(getNewZoom());
 		}
 
 	}
@@ -377,6 +380,11 @@ public class PdfViewToolbarManager {
 					}
 				}
 			}
+		}
+
+		@Override
+		public boolean isEnabled() {
+			return getPage()!=null &&super.isEnabled();
 		}
 
 	}

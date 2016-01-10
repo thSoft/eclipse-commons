@@ -299,6 +299,7 @@ public class FileView extends ViewPart {
 		for (IContributionItem contributionItem : toolbarContributions) {
 			contributionItem.setVisible(false);
 		}
+		toolbar.update(true);
 	}
 
 	private void refreshToolbarContributions() {
@@ -432,6 +433,7 @@ public class FileView extends ViewPart {
 				if(file.equals(getFile())){
 					fileNameDisplay.setText("");//$NON-NLS-1$
 					setFile(null);
+					showErrorPage();
 				}
 			}
 		}

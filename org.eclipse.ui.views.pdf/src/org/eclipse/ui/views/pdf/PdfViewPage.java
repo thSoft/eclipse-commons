@@ -106,6 +106,16 @@ public class PdfViewPage extends ScrolledComposite {
 
 	};
 
+
+	@Override
+	public boolean setFocus() {
+		//prevent setting focus to child element (pdf annotation) causing accidental scrolling
+		//copied from Control#setFocus
+		checkWidget ();
+		if ((getStyle() & SWT.NO_FOCUS) != 0) return false;
+		return forceFocus ();
+	};
+
 	@Override
 	public void redraw() {
 		if (isFileOpen()) {

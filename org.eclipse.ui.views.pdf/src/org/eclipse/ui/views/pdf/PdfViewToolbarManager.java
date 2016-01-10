@@ -182,7 +182,7 @@ public class PdfViewToolbarManager {
 					if(getPage()==null){
 						return;
 					}
-					if ((event.keyCode == SWT.CR) && (text.getText().length() > 0)) {
+					if ((event.keyCode == SWT.CR || event.keyCode==SWT.KEYPAD_CR) && (text.getText().length() > 0)) {
 						getPage().setPage(Integer.parseInt(text.getText()));
 					}
 				}

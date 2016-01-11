@@ -228,6 +228,9 @@ public class PdfViewToolbarManager {
 			GridData layoutData = new GridData();
 			layoutData.verticalAlignment = SWT.CENTER;
 			layoutData.grabExcessVerticalSpace = true;
+			//TODO remove hint once resizing the label works
+			layoutData.widthHint=22;
+			layoutData.horizontalAlignment=SWT.CENTER;
 			label.setLayoutData(layoutData);
 			update();
 			return container;

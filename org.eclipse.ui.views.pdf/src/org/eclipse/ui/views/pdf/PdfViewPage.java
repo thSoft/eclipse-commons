@@ -71,6 +71,8 @@ public class PdfViewPage extends ScrolledComposite {
 
 		@Override
 		public IStatus run(final IProgressMonitor monitor) {
+			loadAnnotationsJob.cancel();
+			waitForJob(loadAnnotationsJob);
 			if(monitor.isCanceled()){
 				return Status.CANCEL_STATUS;
 			}
@@ -82,7 +84,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 					@Override
 					public void run() {
-						if(monitor.isCanceled() || pdfDisplay.isDisposed()){
+						if(pdfDisplay.isDisposed()){
 							return;
 						}
 						Image oldImage = pdfDisplay.getBackgroundImage();
@@ -100,6 +102,9 @@ public class PdfViewPage extends ScrolledComposite {
 				});
 			} catch (PdfException e) {
 				Activator.logError("Can't render PDF page", e);
+			}
+			if(!monitor.isCanceled()){
+				loadAnnotationsJob.schedule();
 			}
 			return Status.OK_STATUS;
 		}
@@ -119,6 +124,8 @@ public class PdfViewPage extends ScrolledComposite {
 	@Override
 	public void redraw() {
 		if (isFileOpen()) {
+			renderJob.cancel();
+			waitForJob(renderJob);
 			renderJob.schedule();
 			createHyperlinks();
 		}
@@ -156,15 +163,21 @@ public class PdfViewPage extends ScrolledComposite {
 		return file;
 	}
 
+	private String getFileName(){
+		return getFile().getFullPath().toOSString();
+	}
+
 	public void setFile(IFile file) throws PdfException {
 		pdfDecoder.openPdfFile(file.getLocation().toOSString());
+		int pageToSet=1;
 		if (file.equals(this.file)) {
-			setPage(getPage());
+			pageToSet=getPage();
 		} else {
 			this.file = file;
-			setPage(1);
 		}
-		loadAnnotations();
+		resetAnnotationsJob.schedule();
+		waitForJob(resetAnnotationsJob);
+		setPage(pageToSet);
 	}
 
 	public void reload() throws PdfException {
@@ -330,88 +343,114 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The hyperlink annotations in the PDF file per page.
 	 */
-	private final List<List<PdfAnnotation>> annotations = new ArrayList<List<PdfAnnotation>>();
+	private final Map<Integer, List<PdfAnnotation>> annotations = new HashMap<Integer, List<PdfAnnotation>>();
+	private Integer pageWithPriorityToLoad=null;
 
 	public PdfAnnotation[] getAnnotationsOnPage(int page) {
-		if (annotations.isEmpty()) {
+		List<PdfAnnotation> loadedAnnotations=annotations.get(page);
+		if(loadedAnnotations==null){
 			return new PdfAnnotation[0];
-		} else {
-			return annotations.get(page - 1).toArray(new PdfAnnotation[0]);
+		}else{
+			return loadedAnnotations.toArray(new PdfAnnotation[0]);
 		}
 	}
 
-	private final Job loadAnnotationsJob = new Job("Creating point-and-click hyperlinks") {
+	private final Job resetAnnotationsJob=new Job("Resetting point-and-click hyperlinks"){
+		@Override
+		public IStatus run(IProgressMonitor monitor) {
+			renderJob.cancel();
+			loadAnnotationsJob.cancel();
+			waitForJob(loadAnnotationsJob);
+			annotations.clear();
+			return Status.OK_STATUS;
+		}
+	};
+
+	private final Job loadAnnotationsJob = new Job("Loading annotations for point-and-click hyperlinks") {
 
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
 			waitForJob(renderJob);
-			annotations.clear();
+
 			if(monitor.isCanceled()){
 				return Status.CANCEL_STATUS;
 			}
-			AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
+
+			Integer page=null;
+			final Integer currentPriorityPage=pageWithPriorityToLoad;
 			int pageCount=getPageCount();
-			for (int page = 1; page <= pageCount; page++) {
-				if(monitor.isCanceled()){
-					break;
+			if(currentPriorityPage!=null && !annotations.containsKey(currentPriorityPage) && currentPriorityPage<=pageCount){
+				page=currentPriorityPage;
+			}else{
+				for(int i=1;i<=pageCount; i++){
+					if(!annotations.containsKey(i)){
+						page=i;
+						break;
+					}
 				}
-				ArrayList<PdfAnnotation> annotationsOnPage = new ArrayList<PdfAnnotation>();
-				annotations.add(annotationsOnPage);
-				PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
-				if (pdfAnnotations != null) {
-					while (pdfAnnotations.hasMoreTokens() && !monitor.isCanceled()) {
-						String key = pdfAnnotations.getNextValueAsString(true);
-						Object rawObject = formRenderer.getFormDataAsObject(key);
-						if ((rawObject != null) && (rawObject instanceof FormObject)) {
-							FormObject formObject = (FormObject)rawObject;
-							int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
-							if (subtype == PdfDictionary.Link) {
-								PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
-								try {
-									byte[] uriDecodedBytes = anchor.getTextStreamValue(PdfDictionary.URI).getBytes("ISO-8859-1"); //$NON-NLS-1$
-									URI uri = new URI(new String(uriDecodedBytes));
-									if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
-										String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
-										String path = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
-										URL url = new URL("file", null, path); //$NON-NLS-1$
-										IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
-										if (files.length > 0) {
-											PdfAnnotation annotation = new PdfAnnotation();
-											annotation.page = page;
-											annotation.file = files[0];
-											annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
-											annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
-											float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
-											annotation.left = rectangle[0];
-											annotation.bottom = rectangle[1];
-											annotation.right = rectangle[2];
-											annotation.top = rectangle[3];
-											annotationsOnPage.add(annotation);
-										}
-									}
-								} catch (URISyntaxException e) {
-									Activator.logError("Invalid annotation URI", e);
-								} catch (UnsupportedEncodingException e) {
-									Activator.logError("Programming error", e);
-								} catch (ArrayIndexOutOfBoundsException e) {
-									Activator.logError("Error while parsing annotation URI", e);
-								} catch (MalformedURLException e) {
-									Activator.logError("Can't transform URI to URL", e);
+			}
+			if(page==null){
+				return Status.OK_STATUS;
+			} else if(monitor.isCanceled()){
+				return Status.CANCEL_STATUS;
+			}
+
+			AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
+			monitor.setTaskName(getFileName()+" page "+page);
+			ArrayList<PdfAnnotation> annotationsOnPage = new ArrayList<PdfAnnotation>();
+			PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
+
+			while (!monitor.isCanceled() && pdfAnnotations.hasMoreTokens()) {
+				String key = pdfAnnotations.getNextValueAsString(true);
+				Object rawObject = formRenderer.getFormDataAsObject(key);
+				if ((rawObject != null) && (rawObject instanceof FormObject)) {
+					FormObject formObject = (FormObject)rawObject;
+					int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
+					if (subtype == PdfDictionary.Link) {
+						PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
+						try {
+							byte[] uriDecodedBytes = anchor.getTextStreamValue(PdfDictionary.URI).getBytes("ISO-8859-1"); //$NON-NLS-1$
+							URI uri = new URI(new String(uriDecodedBytes));
+							if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
+								String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
+								String path = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
+								URL url = new URL("file", null, path); //$NON-NLS-1$
+								IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
+								if (files.length > 0) {
+									PdfAnnotation annotation = new PdfAnnotation();
+									annotation.page = page;
+									annotation.file = files[0];
+									annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
+									annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
+									float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
+									annotation.left = rectangle[0];
+									annotation.bottom = rectangle[1];
+									annotation.right = rectangle[2];
+									annotation.top = rectangle[3];
+									annotationsOnPage.add(annotation);
 								}
 							}
+						} catch (URISyntaxException e) {
+							Activator.logError("Invalid annotation URI", e);
+						} catch (UnsupportedEncodingException e) {
+							Activator.logError("Programming error", e);
+						} catch (ArrayIndexOutOfBoundsException e) {
+							Activator.logError("Error while parsing annotation URI", e);
+						} catch (MalformedURLException e) {
+							Activator.logError("Can't transform URI to URL", e);
 						}
 					}
 				}
 			}
+			if(monitor.isCanceled()){
+				return Status.CANCEL_STATUS;
+			}
+			annotations.put(page, annotationsOnPage);
+			this.schedule();
 			return Status.OK_STATUS;
 		}
 
 	};
-
-	private void loadAnnotations() {
-		loadAnnotationsJob.schedule();
-		createHyperlinks();
-	}
 
 	private static void waitForJob(Job job) {
 		try {
@@ -431,8 +470,8 @@ public class PdfViewPage extends ScrolledComposite {
 	private final Job createHyperlinksJob = new Job("Creating point-and-click hyperlinks") {
 
 		@Override
-		public IStatus run(IProgressMonitor monitor) {
-			waitForJob(loadAnnotationsJob);
+		public IStatus run(final IProgressMonitor monitor) {
+			waitForJob(renderJob);
 			if(monitor.isCanceled()){
 				return Status.CANCEL_STATUS;
 			}
@@ -450,14 +489,26 @@ public class PdfViewPage extends ScrolledComposite {
 
 			});
 			annotationHyperlinkMap.clear();
-			for (final PdfAnnotation annotation : getAnnotationsOnPage(page)) {
-				if (monitor.isCanceled()) {
+			while(!annotations.containsKey(page)){
+				monitor.setTaskName("waiting for annotations to be loaded");
+				if(monitor.isCanceled()){
 					return Status.CANCEL_STATUS;
 				}
-				Display.getDefault().syncExec(new Runnable() {
-
-					@Override
-					public void run() {
+				pageWithPriorityToLoad=page;
+				if(loadAnnotationsJob.getResult()==Status.CANCEL_STATUS){
+					loadAnnotationsJob.schedule();
+				}
+				waitForJob(loadAnnotationsJob);
+			}
+			final PdfAnnotation[] annotationsOnPage = getAnnotationsOnPage(page);
+			monitor.setTaskName(getFileName() + " page "+page);
+			Display.getDefault().syncExec(new Runnable() {
+				@Override
+				public void run() {
+					for (final PdfAnnotation annotation : annotationsOnPage) {
+						if (monitor.isCanceled()) {
+							return;
+						}
 						if(!pdfDisplay.isDisposed()){
 							PdfAnnotationHyperlink hyperlink = new PdfAnnotationHyperlink(pdfDisplay, annotation);
 							annotationHyperlinkMap.put(annotation, hyperlink);
@@ -475,10 +526,9 @@ public class PdfViewPage extends ScrolledComposite {
 							hyperlink.setBounds((int)bounds.x, (int)bounds.y, (int)bounds.width, (int)bounds.height);
 						}
 					}
-
-				});
-			}
-			return Status.OK_STATUS;
+				}
+			});
+			return monitor.isCanceled()?Status.CANCEL_STATUS:Status.OK_STATUS;
 		}
 
 	};

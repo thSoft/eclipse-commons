@@ -72,7 +72,6 @@ public class PdfViewPage extends ScrolledComposite {
 
 		@Override
 		public IStatus run(final IProgressMonitor monitor) {
-			ensureLoadAnnotationsJobDoesNotAccessPdfDecoder();
 			if(monitor.isCanceled()){
 				return Status.CANCEL_STATUS;
 			}
@@ -108,11 +107,6 @@ public class PdfViewPage extends ScrolledComposite {
 			}
 			return monitor.isCanceled()?Status.CANCEL_STATUS:Status.OK_STATUS;
 		}
-
-		private void ensureLoadAnnotationsJobDoesNotAccessPdfDecoder(){
-			loadAnnotationsJob.cancel();
-			waitForJob(loadAnnotationsJob);
-		}
 	};
 
 
@@ -129,6 +123,9 @@ public class PdfViewPage extends ScrolledComposite {
 	public void redraw() {
 		if (isFileOpen()) {
 			renderJob.cancel();
+			loadAnnotationsJob.cancel();
+			createHyperlinksJob.cancel();
+			waitForJob(loadAnnotationsJob);
 			renderJob.schedule();
 			waitForJob(renderJob);
 			createHyperlinks();

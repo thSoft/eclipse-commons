@@ -419,7 +419,7 @@ public class PdfViewPage extends ScrolledComposite {
 			return null;
 		}
 
-		private void addRawObjectToPdfAnnotationList(Object rawObject, List<PdfAnnotation> list){
+		private void addRawObjectToPdfAnnotationList(Object rawObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
 			if ((rawObject != null) && (rawObject instanceof FormObject)) {
 				FormObject formObject = (FormObject)rawObject;
 				int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
@@ -431,12 +431,21 @@ public class PdfViewPage extends ScrolledComposite {
 						if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
 							String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
 							String path = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
-							URL url = new URL("file", null, path); //$NON-NLS-1$
-							IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
-							if (files.length > 0) {
+							IFile targetFile=null;
+							if(fileCache.containsKey(path)){
+								targetFile=fileCache.get(path);
+							}else{
+								URL url = new URL("file", null, path); //$NON-NLS-1$
+								IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
+								if(files.length>0){
+									targetFile=files[0];
+								}
+								fileCache.put(path, targetFile);
+							}
+							if (targetFile!=null) {
 								PdfAnnotation annotation = new PdfAnnotation();
 								annotation.page = page;
-								annotation.file = files[0];
+								annotation.file = targetFile;
 								annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
 								annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
 								float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
@@ -465,12 +474,17 @@ public class PdfViewPage extends ScrolledComposite {
 			AcroRenderer formRenderer = pdfDecoder.getFormRenderer();
 			monitor.setTaskName(getFileName()+" page "+page);
 			List<PdfAnnotation> annotationsOnPage = new ArrayList<PdfAnnotation>();
+
+			//TODO This getter call accounts for 70-99% of the time spent in this method!!
+			//Is there a later more performant jpedal version that can be used?
+			//Can the currently used version be patched?
 			PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
 
+			Map<String, IFile> fileCache=new HashMap<String, IFile>();
 			while (!monitor.isCanceled() && pdfAnnotations.hasMoreTokens()) {
 				String key = pdfAnnotations.getNextValueAsString(true);
 				Object rawObject = formRenderer.getFormDataAsObject(key);
-				addRawObjectToPdfAnnotationList(rawObject, annotationsOnPage);
+				addRawObjectToPdfAnnotationList(rawObject, annotationsOnPage, fileCache);
 			}
 			return annotationsOnPage;
 		}

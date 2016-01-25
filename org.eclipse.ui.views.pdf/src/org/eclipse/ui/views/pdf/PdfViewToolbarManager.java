@@ -87,7 +87,8 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public boolean isEnabled() {
-			return getPage().isPageValid(getNewPage());
+			int newPage=getNewPage();
+			return getPage()!=null && getPage().isPageValid(newPage) && getPage().getPage()!=newPage;
 		}
 
 	}
@@ -178,7 +179,10 @@ public class PdfViewToolbarManager {
 
 				@Override
 				public void keyPressed(KeyEvent event) {
-					if ((event.keyCode == SWT.CR) && (text.getText().length() > 0)) {
+					if(getPage()==null){
+						return;
+					}
+					if ((event.keyCode == SWT.CR || event.keyCode==SWT.KEYPAD_CR) && (text.getText().length() > 0)) {
 						getPage().setPage(Integer.parseInt(text.getText()));
 					}
 				}
@@ -224,6 +228,9 @@ public class PdfViewToolbarManager {
 			GridData layoutData = new GridData();
 			layoutData.verticalAlignment = SWT.CENTER;
 			layoutData.grabExcessVerticalSpace = true;
+			//TODO remove hint once resizing the label works
+			layoutData.widthHint=22;
+			layoutData.horizontalAlignment=SWT.CENTER;
 			label.setLayoutData(layoutData);
 			update();
 			return container;
@@ -261,7 +268,7 @@ public class PdfViewToolbarManager {
 
 		@Override
 		public boolean isEnabled() {
-			return getPage().isZoomValid(getNewZoom());
+			return getPage()!=null && getPage().isZoomValid(getNewZoom());
 		}
 
 	}
@@ -377,6 +384,11 @@ public class PdfViewToolbarManager {
 					}
 				}
 			}
+		}
+
+		@Override
+		public boolean isEnabled() {
+			return getPage()!=null &&super.isEnabled();
 		}
 
 	}

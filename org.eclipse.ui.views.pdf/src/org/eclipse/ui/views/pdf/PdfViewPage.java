@@ -26,10 +26,13 @@ import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.util.ImageUtils;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
 import org.jpedal.PdfDecoderFX;
 import org.jpedal.exception.PdfException;
@@ -44,16 +47,22 @@ public class PdfViewPage extends ScrolledComposite {
 
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-		getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
-		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
-		setShowFocusedControl(true);
-
 		pdfDisplay = new Composite(this, SWT.NONE);
 		pdfDisplay.setBackgroundMode(SWT.INHERIT_FORCE);
-		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
+		if(pdfDecoder==null){
+			pdfDisplay.setLayout(new GridLayout());
+			Label errorLabel = new Label(pdfDisplay, SWT.CENTER);
+			errorLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
+			errorLabel.setText("JavaFX Runtime library is missing.\n\nTry adding\n-Dorg.osgi.framework.bundle.parent=ext\nas jvm start parameter to the eclipse.ini");
+			pdfDisplay.pack(true);
+		}else{
+			getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
+			getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
+			pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
+			setFile(file);
+		}
+		setShowFocusedControl(true);
 		setContent(pdfDisplay);
-
-		setFile(file);
 	}
 
 	// Rendering
@@ -66,7 +75,16 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The PDF engine which renders the pages.
 	 */
-	private final PdfDecoderFX pdfDecoder = new PdfDecoderFX();
+	private final PdfDecoderFX pdfDecoder = createDecoder();
+
+	private PdfDecoderFX createDecoder(){
+		try {
+			return new PdfDecoderFX();
+		} catch (NoClassDefFoundError e) {
+			return null;
+		}
+	}
+	
 
 	private final Job renderJob = new Job("Rendering PDF page") {
 
@@ -169,6 +187,9 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	public void setFile(IFile file) throws PdfException {
+		if(pdfDecoder==null){
+			return;
+		}
 		pdfDecoder.openPdfFile(file.getLocation().toOSString());
 		int pageToSet=1;
 		if (file.equals(this.file)) {
@@ -190,13 +211,15 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	public void closeFile() {
-		renderJob.cancel();
-		waitForJob(renderJob);
-		loadAnnotationsJob.cancel();
-		waitForJob(loadAnnotationsJob);
-		createHyperlinksJob.cancel();
-		waitForJob(createHyperlinksJob);
-		pdfDecoder.closePdfFile();
+		if(pdfDecoder!=null){
+			renderJob.cancel();
+			waitForJob(renderJob);
+			loadAnnotationsJob.cancel();
+			waitForJob(loadAnnotationsJob);
+			createHyperlinksJob.cancel();
+			waitForJob(createHyperlinksJob);
+			pdfDecoder.closePdfFile();
+		}
 		pdfDisplay.dispose();
 		this.dispose();
 	}

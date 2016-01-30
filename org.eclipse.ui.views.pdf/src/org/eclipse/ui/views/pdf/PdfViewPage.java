@@ -31,10 +31,10 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
-import org.jpedal.PdfDecoder;
+import org.jpedal.PdfDecoderFX;
 import org.jpedal.exception.PdfException;
 import org.jpedal.objects.PdfPageData;
-import org.jpedal.objects.acroforms.rendering.AcroRenderer;
+import org.jpedal.objects.acroforms.AcroRenderer;
 import org.jpedal.objects.raw.FormObject;
 import org.jpedal.objects.raw.PdfArrayIterator;
 import org.jpedal.objects.raw.PdfDictionary;
@@ -66,7 +66,7 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The PDF engine which renders the pages.
 	 */
-	private final PdfDecoder pdfDecoder = new PdfDecoder();
+	private final PdfDecoderFX pdfDecoder = new PdfDecoderFX();
 
 	private final Job renderJob = new Job("Rendering PDF page") {
 
@@ -419,9 +419,7 @@ public class PdfViewPage extends ScrolledComposite {
 			return null;
 		}
 
-		private void addRawObjectToPdfAnnotationList(Object rawObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
-			if ((rawObject != null) && (rawObject instanceof FormObject)) {
-				FormObject formObject = (FormObject)rawObject;
+		private void addRawObjectToPdfAnnotationList(FormObject formObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
 				int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
 				if (subtype == PdfDictionary.Link) {
 					PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
@@ -464,7 +462,6 @@ public class PdfViewPage extends ScrolledComposite {
 						Activator.logError("Can't transform URI to URL", e);
 					}
 				}
-			}
 		}
 
 		/**
@@ -483,7 +480,7 @@ public class PdfViewPage extends ScrolledComposite {
 			Map<String, IFile> fileCache=new HashMap<String, IFile>();
 			while (!monitor.isCanceled() && pdfAnnotations.hasMoreTokens()) {
 				String key = pdfAnnotations.getNextValueAsString(true);
-				Object rawObject = formRenderer.getFormDataAsObject(key);
+				FormObject rawObject = formRenderer.getFormObject(key);
 				addRawObjectToPdfAnnotationList(rawObject, annotationsOnPage, fileCache);
 			}
 			return annotationsOnPage;

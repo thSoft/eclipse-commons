@@ -1,5 +1,7 @@
 package org.eclipse.ui.views.pdf;
 
+import javafx.embed.swing.JFXPanel;
+
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -14,6 +16,11 @@ public class Activator extends AbstractUIPlugin {
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		instance = this;
+		ensureToolkitInitialized();
+	}
+
+	private void ensureToolkitInitialized(){
+		new JFXPanel();
 	}
 
 	/**

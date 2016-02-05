@@ -1,0 +1,10 @@
+instructions.install = \
+  addJvmArg(jvmArg:-Dorg.osgi.framework.bundle.parent=ext);
+instructions.uninstall = \
+  removeJvmArg(jvmArg:-Dorg.osgi.framework.bundle.parent=ext);
+instructions.install.import= \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg,\
+  org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg
+instructions.uninstall.import = \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg, \
+  org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg

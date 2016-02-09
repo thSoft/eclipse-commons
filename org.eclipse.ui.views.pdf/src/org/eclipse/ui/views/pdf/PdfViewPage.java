@@ -529,6 +529,9 @@ public class PdfViewPage extends ScrolledComposite {
 
 		@Override
 		public IStatus run(final IProgressMonitor monitor) {
+			if(pdfDecoder==null){
+				cancel();
+			}
 			waitForJob(renderJob);
 			if(monitor.isCanceled()){
 				return Status.CANCEL_STATUS;

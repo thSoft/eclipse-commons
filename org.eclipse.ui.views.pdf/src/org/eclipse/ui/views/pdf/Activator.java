@@ -1,11 +1,10 @@
 package org.eclipse.ui.views.pdf;
 
-import javafx.embed.swing.JFXPanel;
-
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.jpedal.eclipse.ToolkitUtil;
 import org.osgi.framework.BundleContext;
 
 public class Activator extends AbstractUIPlugin {
@@ -20,10 +19,9 @@ public class Activator extends AbstractUIPlugin {
 		ensureToolkitInitialized();
 	}
 
-	@SuppressWarnings("restriction")
 	private void ensureToolkitInitialized(){
 		try {
-			new JFXPanel();
+			ToolkitUtil.initializeToolkit();
 		} catch (NoClassDefFoundError e) {
 			javafxRuntimeAvailable=false;
 			logError("jfxrt.jar seems not to be on the class path; try adding -Dorg.osgi.framework.bundle.parent=ext as jvm start parameter to the eclipse.ini", e);

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: JPedal
 Bundle-SymbolicName: org.jpedal
 Bundle-Version: 6.9.29
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: IDRsolutions
 Export-Package: com.idrsolutions.pdf.color.blends,
  com.idrsolutions.pdf.color.shading,
@@ -12,6 +12,7 @@ Export-Package: com.idrsolutions.pdf.color.blends,
  org.jpedal.constants,
  org.jpedal.display,
  org.jpedal.display.javafx,
+ org.jpedal.eclipse,
  org.jpedal.examples.baseviewer,
  org.jpedal.examples.handlers,
  org.jpedal.examples.viewer,
@@ -103,4 +104,5 @@ Export-Package: com.idrsolutions.pdf.color.blends,
  org.jpedal.utils,
  org.jpedal.utils.repositories,
  org.jpedal.utils.repositories.generic
-Bundle-ClassPath: OpenViewerFX-6.9.29.jar
+Bundle-ClassPath: OpenViewerFX-6.9.29.jar,
+ .

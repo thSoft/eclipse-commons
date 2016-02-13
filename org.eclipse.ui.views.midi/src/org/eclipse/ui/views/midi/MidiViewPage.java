@@ -240,7 +240,7 @@ public class MidiViewPage extends ScrolledComposite {
 	private TableViewer tracks;
 
 	private void addTracks(Composite parent) {
-		tracks = new TableViewer(parent, SWT.BORDER | SWT.NO_SCROLL);
+		tracks = new TableViewer(parent, SWT.BORDER | SWT.NO_SCROLL|SWT.FULL_SELECTION);
 		for (TrackColumn trackColumn : TrackColumn.values()) {
 			TableViewerColumn tableViewerColumn = new TableViewerColumn(tracks, SWT.NONE);
 			tableViewerColumn.setEditingSupport(new TrackEditingSupport(tracks, trackColumn));

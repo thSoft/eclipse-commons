@@ -86,47 +86,59 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 	
 
-	private final Job renderJob = new Job("Rendering PDF page") {
+	private final RenderJob renderJob=new RenderJob();
 
-		@Override
-		public IStatus run(final IProgressMonitor monitor) {
-			if(monitor.isCanceled()){
-				return Status.CANCEL_STATUS;
-			}
+	private class RenderJob extends Job{
+
+		private BufferedImage pageAsImage;
+		public RenderJob() {
+			super("Rendering PDF page");
+		}
+
+		public void obtainImage(){
 			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
-				final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
-				final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
-				Display.getDefault().syncExec(new Runnable() {
-
-					@Override
-					public void run() {
-						if(pdfDisplay.isDisposed()){
-							return;
-						}
-						Image oldImage = pdfDisplay.getBackgroundImage();
-						if (oldImage != null) {
-							oldImage.dispose();
-						}
-						pdfDisplay.setBackgroundImage(swtImage);
-						int width = awtImage.getWidth();
-						int height = awtImage.getHeight();
-						pdfDisplay.setSize(width, height);
-						align();
-						refreshToolbar();
-					}
-
-				});
+				pageAsImage=pdfDecoder.getPageAsImage(getPage());
 			} catch (PdfException e) {
 				Activator.logError("Can't render PDF page", e);
+				pageAsImage=null;
 			}
+		}
+
+		@Override
+		protected IStatus run(IProgressMonitor monitor) {
+			if(monitor.isCanceled()||pageAsImage==null){
+				return Status.CANCEL_STATUS;
+			}
+
+			final BufferedImage awtImage=pageAsImage;
+			final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
+			Display.getDefault().syncExec(new Runnable() {
+
+				@Override
+				public void run() {
+					if(pdfDisplay.isDisposed()){
+						return;
+					}
+					Image oldImage = pdfDisplay.getBackgroundImage();
+					if (oldImage != null) {
+						oldImage.dispose();
+					}
+					pdfDisplay.setBackgroundImage(swtImage);
+					int width = awtImage.getWidth();
+					int height = awtImage.getHeight();
+					pdfDisplay.setSize(width, height);
+					align();
+					refreshToolbar();
+				}
+
+			});
 			if(!monitor.isCanceled()){
 				loadAnnotationsJob.schedule();
 			}
 			return monitor.isCanceled()?Status.CANCEL_STATUS:Status.OK_STATUS;
 		}
-	};
-
+	}
 
 	@Override
 	public boolean setFocus() {
@@ -144,6 +156,8 @@ public class PdfViewPage extends ScrolledComposite {
 			loadAnnotationsJob.cancel();
 			createHyperlinksJob.cancel();
 			waitForJob(loadAnnotationsJob);
+			//waiting for renderJob is not necessary - done by loadAnnotationsJob
+			renderJob.obtainImage();
 			renderJob.schedule();
 			waitForJob(renderJob);
 			createHyperlinks();

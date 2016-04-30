@@ -53,7 +53,7 @@ public class PdfViewPage extends ScrolledComposite {
 			pdfDisplay.setLayout(new GridLayout());
 			Label errorLabel = new Label(pdfDisplay, SWT.CENTER);
 			errorLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
-			errorLabel.setText("JavaFX Runtime library is missing.\n\nTry adding\n-Dorg.osgi.framework.bundle.parent=ext\nas jvm start parameter to the eclipse.ini");
+			errorLabel.setText(Activator.MISSING_JVM_ARGUMENT_ERROR);
 			pdfDisplay.pack(true);
 		}else{
 			getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);

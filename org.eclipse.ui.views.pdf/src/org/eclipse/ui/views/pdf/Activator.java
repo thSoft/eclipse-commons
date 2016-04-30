@@ -11,6 +11,7 @@ public class Activator extends AbstractUIPlugin {
 
 	private static Activator instance;
 	private boolean javafxRuntimeAvailable=true;
+	public static final String MISSING_JVM_ARGUMENT_ERROR="jfxrt.jar seems not to be on the class path; try adding -Dorg.osgi.framework.bundle.parent=ext as JVM start parameter to the eclipse.ini";
 
 	@Override
 	public void start(BundleContext context) throws Exception {
@@ -24,11 +25,11 @@ public class Activator extends AbstractUIPlugin {
 			ToolkitUtil.initializeToolkit();
 		} catch (NoClassDefFoundError e) {
 			javafxRuntimeAvailable=false;
-			logError("jfxrt.jar seems not to be on the class path; try adding -Dorg.osgi.framework.bundle.parent=ext as jvm start parameter to the eclipse.ini", e);
+			logError(MISSING_JVM_ARGUMENT_ERROR, e);
 		}
 	}
 
-	public boolean isJavaFxRuntimeAvalilable(){
+	public boolean isJavaFxRuntimeAvailable(){
 		return javafxRuntimeAvailable;
 	}
 

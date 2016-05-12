@@ -27,7 +27,11 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	@Override
 	public IContributionItem[] getToolbarContributions() {
-		return toolbar.getToolbarContributions();
+		if(Activator.getInstance().isJavaFxRuntimeAvailable()){
+			return toolbar.getToolbarContributions();
+		}else{
+			return new IContributionItem[]{};
+		}
 	}
 
 	private PdfViewPage page;
@@ -69,13 +73,13 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 	@Override
 	public void pageClosed(PdfViewPage page) {
 		page.closeFile();
-		if(this.page!=null && this.page.getFile().equals(page.getFile())){
+		if(this.page!=null && this.page.getFile()!=null && this.page.getFile().equals(page.getFile())){
 			if(!this.page.isDisposed()){
 				this.page.closeFile();
 			}
 			setPage(null);
 		}
-		if(toolbar.getPage()!=null && toolbar.getPage().getFile().equals(page.getFile())){
+		if(toolbar.getPage()!=null && toolbar.getPage().getFile()!=null && toolbar.getPage().getFile().equals(page.getFile())){
 			if(!toolbar.getPage().isDisposed()){
 				toolbar.getPage().closeFile();
 			}

@@ -19,6 +19,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.util.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
@@ -26,15 +27,18 @@ import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.util.ImageUtils;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
-import org.jpedal.PdfDecoder;
+import org.jpedal.PdfDecoderFX;
 import org.jpedal.exception.PdfException;
 import org.jpedal.objects.PdfPageData;
-import org.jpedal.objects.acroforms.rendering.AcroRenderer;
+import org.jpedal.objects.acroforms.AcroRenderer;
 import org.jpedal.objects.raw.FormObject;
 import org.jpedal.objects.raw.PdfArrayIterator;
 import org.jpedal.objects.raw.PdfDictionary;
@@ -44,16 +48,22 @@ public class PdfViewPage extends ScrolledComposite {
 
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-		getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
-		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
-		setShowFocusedControl(true);
-
 		pdfDisplay = new Composite(this, SWT.NONE);
 		pdfDisplay.setBackgroundMode(SWT.INHERIT_FORCE);
-		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
+		if(pdfDecoder==null){
+			pdfDisplay.setLayout(new GridLayout());
+			Label errorLabel = new Label(pdfDisplay, SWT.CENTER);
+			errorLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
+			errorLabel.setText(Activator.MISSING_JVM_ARGUMENT_ERROR);
+			pdfDisplay.pack(true);
+		}else{
+			getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
+			getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
+			pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
+			setFile(file);
+		}
+		setShowFocusedControl(true);
 		setContent(pdfDisplay);
-
-		setFile(file);
 	}
 
 	// Rendering
@@ -66,49 +76,74 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The PDF engine which renders the pages.
 	 */
-	private final PdfDecoder pdfDecoder = new PdfDecoder();
+	private final PdfDecoderFX pdfDecoder = createDecoder();
 
-	private final Job renderJob = new Job("Rendering PDF page") {
+	private PdfDecoderFX createDecoder(){
+		try {
+			return new PdfDecoderFX();
+		} catch (NoClassDefFoundError e) {
+			return null;
+		}
+	}
+	
 
-		@Override
-		public IStatus run(final IProgressMonitor monitor) {
-			if(monitor.isCanceled()){
-				return Status.CANCEL_STATUS;
+	private final RenderJob renderJob=new RenderJob();
+
+	private static final boolean IS_MAC=Util.isMac();
+	private class RenderJob extends Job{
+
+		private BufferedImage pageAsImage;
+		public RenderJob() {
+			super("Rendering PDF page");
+		}
+
+		public void obtainImage(){
+			if(IS_MAC){
+				Activator.initializeToolkit();
 			}
 			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
-				final BufferedImage awtImage = pdfDecoder.getPageAsImage(getPage());
-				final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
-				Display.getDefault().syncExec(new Runnable() {
-
-					@Override
-					public void run() {
-						if(pdfDisplay.isDisposed()){
-							return;
-						}
-						Image oldImage = pdfDisplay.getBackgroundImage();
-						if (oldImage != null) {
-							oldImage.dispose();
-						}
-						pdfDisplay.setBackgroundImage(swtImage);
-						int width = awtImage.getWidth();
-						int height = awtImage.getHeight();
-						pdfDisplay.setSize(width, height);
-						align();
-						refreshToolbar();
-					}
-
-				});
+				pageAsImage=pdfDecoder.getPageAsImage(getPage());
 			} catch (PdfException e) {
 				Activator.logError("Can't render PDF page", e);
+				pageAsImage=null;
 			}
+		}
+
+		@Override
+		protected IStatus run(IProgressMonitor monitor) {
+			if(monitor.isCanceled()||pageAsImage==null){
+				return Status.CANCEL_STATUS;
+			}
+
+			final BufferedImage awtImage=pageAsImage;
+			final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
+			Display.getDefault().syncExec(new Runnable() {
+
+				@Override
+				public void run() {
+					if(pdfDisplay.isDisposed()){
+						return;
+					}
+					Image oldImage = pdfDisplay.getBackgroundImage();
+					if (oldImage != null) {
+						oldImage.dispose();
+					}
+					pdfDisplay.setBackgroundImage(swtImage);
+					int width = awtImage.getWidth();
+					int height = awtImage.getHeight();
+					pdfDisplay.setSize(width, height);
+					align();
+					refreshToolbar();
+				}
+
+			});
 			if(!monitor.isCanceled()){
 				loadAnnotationsJob.schedule();
 			}
 			return monitor.isCanceled()?Status.CANCEL_STATUS:Status.OK_STATUS;
 		}
-	};
-
+	}
 
 	@Override
 	public boolean setFocus() {
@@ -126,6 +161,8 @@ public class PdfViewPage extends ScrolledComposite {
 			loadAnnotationsJob.cancel();
 			createHyperlinksJob.cancel();
 			waitForJob(loadAnnotationsJob);
+			//waiting for renderJob is not necessary - done by loadAnnotationsJob
+			renderJob.obtainImage();
 			renderJob.schedule();
 			waitForJob(renderJob);
 			createHyperlinks();
@@ -169,6 +206,9 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	public void setFile(IFile file) throws PdfException {
+		if(pdfDecoder==null){
+			return;
+		}
 		pdfDecoder.openPdfFile(file.getLocation().toOSString());
 		int pageToSet=1;
 		if (file.equals(this.file)) {
@@ -190,13 +230,15 @@ public class PdfViewPage extends ScrolledComposite {
 	}
 
 	public void closeFile() {
-		renderJob.cancel();
-		waitForJob(renderJob);
-		loadAnnotationsJob.cancel();
-		waitForJob(loadAnnotationsJob);
-		createHyperlinksJob.cancel();
-		waitForJob(createHyperlinksJob);
-		pdfDecoder.closePdfFile();
+		if(pdfDecoder!=null){
+			renderJob.cancel();
+			waitForJob(renderJob);
+			loadAnnotationsJob.cancel();
+			waitForJob(loadAnnotationsJob);
+			createHyperlinksJob.cancel();
+			waitForJob(createHyperlinksJob);
+			pdfDecoder.closePdfFile();
+		}
 		pdfDisplay.dispose();
 		this.dispose();
 	}
@@ -419,9 +461,7 @@ public class PdfViewPage extends ScrolledComposite {
 			return null;
 		}
 
-		private void addRawObjectToPdfAnnotationList(Object rawObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
-			if ((rawObject != null) && (rawObject instanceof FormObject)) {
-				FormObject formObject = (FormObject)rawObject;
+		private void addRawObjectToPdfAnnotationList(FormObject formObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
 				int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
 				if (subtype == PdfDictionary.Link) {
 					PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
@@ -464,7 +504,6 @@ public class PdfViewPage extends ScrolledComposite {
 						Activator.logError("Can't transform URI to URL", e);
 					}
 				}
-			}
 		}
 
 		/**
@@ -483,7 +522,7 @@ public class PdfViewPage extends ScrolledComposite {
 			Map<String, IFile> fileCache=new HashMap<String, IFile>();
 			while (!monitor.isCanceled() && pdfAnnotations.hasMoreTokens()) {
 				String key = pdfAnnotations.getNextValueAsString(true);
-				Object rawObject = formRenderer.getFormDataAsObject(key);
+				FormObject rawObject = formRenderer.getFormObject(key);
 				addRawObjectToPdfAnnotationList(rawObject, annotationsOnPage, fileCache);
 			}
 			return annotationsOnPage;
@@ -509,6 +548,9 @@ public class PdfViewPage extends ScrolledComposite {
 
 		@Override
 		public IStatus run(final IProgressMonitor monitor) {
+			if(pdfDecoder==null){
+				cancel();
+			}
 			waitForJob(renderJob);
 			if(monitor.isCanceled()){
 				return Status.CANCEL_STATUS;

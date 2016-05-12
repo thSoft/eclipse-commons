@@ -19,6 +19,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.util.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
@@ -88,6 +89,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 	private final RenderJob renderJob=new RenderJob();
 
+	private static final boolean IS_MAC=Util.isMac();
 	private class RenderJob extends Job{
 
 		private BufferedImage pageAsImage;
@@ -96,6 +98,9 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 
 		public void obtainImage(){
+			if(IS_MAC){
+				Activator.initializeToolkit();
+			}
 			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
 				pageAsImage=pdfDecoder.getPageAsImage(getPage());

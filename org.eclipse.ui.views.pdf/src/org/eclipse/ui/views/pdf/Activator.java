@@ -1,17 +1,18 @@
 package org.eclipse.ui.views.pdf;
 
+import javafx.embed.swing.JFXPanel;
+
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.jpedal.eclipse.ToolkitUtil;
 import org.osgi.framework.BundleContext;
 
 public class Activator extends AbstractUIPlugin {
 
 	private static Activator instance;
 	private boolean javafxRuntimeAvailable=true;
-	public static final String MISSING_JVM_ARGUMENT_ERROR="jfxrt.jar seems not to be on the class path; try adding -Dorg.osgi.framework.bundle.parent=ext as JVM start parameter to the eclipse.ini";
+	public static final String MISSING_JVM_ARGUMENT_ERROR="jfxrt.jar seems not to be on the class path; try adding\n-Dorg.osgi.framework.bundle.parent=ext\nas JVM start parameter to the eclipse.ini";
 
 	@Override
 	public void start(BundleContext context) throws Exception {
@@ -22,11 +23,20 @@ public class Activator extends AbstractUIPlugin {
 
 	private void ensureToolkitInitialized(){
 		try {
-			ToolkitUtil.initializeToolkit();
+			initializeToolkit();
 		} catch (NoClassDefFoundError e) {
 			javafxRuntimeAvailable=false;
 			logError(MISSING_JVM_ARGUMENT_ERROR, e);
 		}
+	}
+
+	//according to numerous StackOverflow questions and blog posts
+	//this is a recommended way for initializing the toolkit
+	/**
+	 * @throws NoClassDefFoundError if jfxrt.jar is not on the class path
+	 * */
+	public static final void initializeToolkit(){
+		new JFXPanel();
 	}
 
 	public boolean isJavaFxRuntimeAvailable(){

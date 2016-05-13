@@ -34,18 +34,27 @@ public class PdfViewScrollHandler implements IHandler{
 			Point currentOrigin=page.getOrigin();
 			int xToSet=currentOrigin.x;
 			int yToSet=currentOrigin.y;
-			if(xToSet>=0 && yToSet>=0){
-				switch(key){
-					case SWT.ARROW_UP:yToSet-=vInc;break;
-					case SWT.ARROW_DOWN:yToSet+=vInc;break;
-					case SWT.ARROW_LEFT:xToSet-=hInc;break;
-					case SWT.ARROW_RIGHT:xToSet+=hInc;break;
-					default:return null;
-				}
+			switch(key){
+				case SWT.ARROW_UP:yToSet=getNewValue(yToSet, -vInc);break;
+				case SWT.ARROW_DOWN:yToSet=getNewValue(yToSet, vInc);break;
+				case SWT.ARROW_LEFT:xToSet=getNewValue(xToSet, -hInc);break;
+				case SWT.ARROW_RIGHT:xToSet=getNewValue(xToSet, hInc);break;
+				default:return null;
+			}
+			if(xToSet!=currentOrigin.x || yToSet!=currentOrigin.y){
 				page.setOrigin(xToSet, yToSet);
 			}
 		}
 		return null;
+	}
+
+	private int getNewValue(int current, int offset){
+		if(current>=0){
+			return current+offset;
+		}else{
+			//no scrolling possible, page already smaller than frame
+			return current;
+		}
 	}
 
 	@Override

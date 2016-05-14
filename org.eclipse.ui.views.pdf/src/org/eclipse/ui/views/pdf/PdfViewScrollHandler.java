@@ -7,11 +7,41 @@ import org.eclipse.core.commands.IHandlerListener;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.views.file.FileView;
 import org.eclipse.ui.views.file.IFileViewType;
 
 public class PdfViewScrollHandler implements IHandler{
+
+	public static void fixNegativeOriginMouseScrollBug(PdfViewPage page){
+		exchangeScrollListener(page, true);
+		exchangeScrollListener(page, false);
+	}
+
+	private static void exchangeScrollListener(final PdfViewPage page, final boolean horizontalScrollBar){
+		ScrollBar scrollBar=horizontalScrollBar?page.getHorizontalBar():page.getVerticalBar();
+		Listener[] listeners = scrollBar.getListeners(SWT.Selection);
+		if(listeners.length==1){
+			final Listener originalListener=listeners[0];
+			scrollBar.removeListener(SWT.Selection, originalListener);
+			scrollBar.addListener(SWT.Selection, new Listener() {
+
+				@Override
+				public void handleEvent(Event event) {
+					//ScrolledComposit does not expect negative origin values
+					//so mouse scroll event sets origin to minimal selection (hscroll/vscroll)
+					//this has to be prevented
+					Point origin = page.getOrigin();
+					int originValueToCheck=horizontalScrollBar?origin.x:origin.y;
+					if(originValueToCheck>=0){
+						originalListener.handleEvent(event);
+					}
+				}
+			});
+		}
+	}
 
 	private PdfViewPage getPage(){
 		//handler activation ensures active part is FileView

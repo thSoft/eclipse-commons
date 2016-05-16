@@ -59,31 +59,23 @@ public class PdfViewScrollHandler implements IHandler{
 		PdfViewPage page = getPage();
 		if(page!=null && (event.getTrigger()) instanceof Event){
 			int key=((Event)event.getTrigger()).keyCode;
-			int hInc=page.getHorizontalBar().getIncrement();
-			int vInc=page.getVerticalBar().getIncrement();
-			Point currentOrigin=page.getOrigin();
-			int xToSet=currentOrigin.x;
-			int yToSet=currentOrigin.y;
 			switch(key){
-				case SWT.ARROW_UP:yToSet=getNewValue(yToSet, -vInc);break;
-				case SWT.ARROW_DOWN:yToSet=getNewValue(yToSet, vInc);break;
-				case SWT.ARROW_LEFT:xToSet=getNewValue(xToSet, -hInc);break;
-				case SWT.ARROW_RIGHT:xToSet=getNewValue(xToSet, hInc);break;
+				case SWT.ARROW_UP:scroll(page.getVerticalBar(),true);break;
+				case SWT.ARROW_DOWN:scroll(page.getVerticalBar(),false);break;
+				case SWT.ARROW_LEFT:scroll(page.getHorizontalBar(),true);break;
+				case SWT.ARROW_RIGHT:scroll(page.getHorizontalBar(),false);break;
 				default:return null;
-			}
-			if(xToSet!=currentOrigin.x || yToSet!=currentOrigin.y){
-				page.setOrigin(xToSet, yToSet);
 			}
 		}
 		return null;
 	}
 
-	private int getNewValue(int current, int offset){
-		if(current>=0){
-			return current+offset;
-		}else{
-			//no scrolling possible, page already smaller than frame
-			return current;
+	private void scroll(ScrollBar bar, boolean up){
+		int inc = up?-bar.getIncrement():bar.getIncrement();
+		bar.setSelection(bar.getSelection()+inc);
+		Listener[] listeners = bar.getListeners(SWT.Selection);
+		for (Listener listener : listeners) {
+			listener.handleEvent(new Event());
 		}
 	}
 

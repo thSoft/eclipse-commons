@@ -133,14 +133,14 @@ public class FileView extends ViewPart {
 		IDialogSettings dialogSettings = Activator.getInstance().getDialogSettings();
 		if (dialogSettings != null) {
 			// Path
-			String pathString = dialogSettings.get(PATH);
+			String pathString = dialogSettings.get(getSettingsKey(PATH));
 			if (pathString != null) {
 				IPath path = Path.fromPortableString(pathString);
 				IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(path);
 				setFile(file);
 			}
 			// Linked
-			Boolean linked = dialogSettings.getBoolean(LINKED);
+			Boolean linked = dialogSettings.getBoolean(getSettingsKey(LINKED));
 			if (linked != null) {
 				this.linked = linked;
 			}
@@ -204,9 +204,13 @@ public class FileView extends ViewPart {
 	private void saveSettings() {
 		IDialogSettings dialogSettings = Activator.getInstance().getDialogSettings();
 		if(dialogSettings!=null){
-			dialogSettings.put(PATH, (file == null || file.getLocation() == null) ? null : file.getLocation().toPortableString());
-			dialogSettings.put(LINKED, linked);
+			dialogSettings.put(getSettingsKey(PATH), (file == null || file.getLocation() == null) ? null : file.getLocation().toPortableString());
+			dialogSettings.put(getSettingsKey(LINKED), linked);
 		}
+	}
+
+	private String getSettingsKey(String prefix){
+		return prefix+getType().getClass().getSimpleName();
 	}
 
 	@Override

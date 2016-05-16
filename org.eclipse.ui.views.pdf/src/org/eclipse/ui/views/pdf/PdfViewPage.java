@@ -64,6 +64,7 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 		setShowFocusedControl(true);
 		setContent(pdfDisplay);
+		PdfViewScrollHandler.fixNegativeOriginMouseScrollBug(this);
 	}
 
 	// Rendering

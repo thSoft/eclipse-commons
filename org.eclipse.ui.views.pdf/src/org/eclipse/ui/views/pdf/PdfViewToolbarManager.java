@@ -1,6 +1,7 @@
 package org.eclipse.ui.views.pdf;
 
 import java.text.MessageFormat;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
@@ -326,9 +327,15 @@ public class PdfViewToolbarManager {
 	public class FitToAction extends Action {
 
 		private final ControlListener resizeListener = new ControlAdapter() {
+			private AtomicBoolean preventZoomingToOftenLock=new AtomicBoolean(false);
 
 			@Override
 			public void controlResized(ControlEvent e) {
+				if(preventZoomingToOftenLock.get()){
+					//workaround for for problem described in pull request 17
+					return;
+				}
+				preventZoomingToOftenLock.set(true);
 				PdfViewPage page = getPage();
 				float widthRatio = Float.MAX_VALUE;
 				if (fitToWidth) {
@@ -343,6 +350,7 @@ public class PdfViewToolbarManager {
 					heightRatio = imageHeight / pageHeight;
 				}
 				page.setZoom(Math.min(widthRatio, heightRatio));
+				preventZoomingToOftenLock.set(false);
 			}
 
 		};

@@ -462,7 +462,7 @@ public class PdfViewPage extends ScrolledComposite {
 			return null;
 		}
 
-		private void addRawObjectToPdfAnnotationList(FormObject formObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
+		private void addRawObjectToPdfAnnotationList(Integer page, FormObject formObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
 				int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
 				if (subtype == PdfDictionary.Link) {
 					PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
@@ -524,7 +524,7 @@ public class PdfViewPage extends ScrolledComposite {
 			while (!monitor.isCanceled() && pdfAnnotations.hasMoreTokens()) {
 				String key = pdfAnnotations.getNextValueAsString(true);
 				FormObject rawObject = formRenderer.getFormObject(key);
-				addRawObjectToPdfAnnotationList(rawObject, annotationsOnPage, fileCache);
+				addRawObjectToPdfAnnotationList(page, rawObject, annotationsOnPage, fileCache);
 			}
 			return annotationsOnPage;
 		}

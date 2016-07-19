@@ -166,7 +166,9 @@ public class PdfViewPage extends ScrolledComposite {
 			renderJob.obtainImage();
 			renderJob.schedule();
 			waitForJob(renderJob);
-			createHyperlinks();
+			if(renderJob.getResult()!=null){
+				createHyperlinks();
+			}
 		}
 	}
 

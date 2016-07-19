@@ -42,13 +42,16 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.EditorPart;
+import org.eclipse.ui.part.FileEditorInput;
+import org.eclipse.ui.part.IShowInTarget;
 import org.eclipse.ui.part.PageBook;
+import org.eclipse.ui.part.ShowInContext;
 import org.eclipse.ui.part.ViewPart;
 
 /**
  * A view that displays the file determined by its current source.
  */
-public class FileView extends ViewPart {
+public class FileView extends ViewPart implements IShowInTarget{
 
 	public static final String BINDINGS = "bindings"; //$NON-NLS-1$
 
@@ -471,4 +474,29 @@ public class FileView extends ViewPart {
 			return result;
 		};
 	};
+
+	@Override
+	public boolean show(ShowInContext context) {
+		if (context == null)
+			return false;
+		Object potentialFile=null;
+		ISelection sel = context.getSelection();
+		if (sel instanceof IStructuredSelection) {
+			IStructuredSelection ss = (IStructuredSelection) sel;
+			potentialFile = ss.getFirstElement();
+		}else{
+			Object input = context.getInput();
+			if(input instanceof FileEditorInput){
+				potentialFile=((FileEditorInput)input).getFile();
+			}
+		}
+		if (potentialFile instanceof IFile) {
+			IFile actualFileToOpen = type.getFile((IFile) potentialFile);
+			if (actualFileToOpen.exists()) {
+				show(actualFileToOpen);
+				return true;
+			}
+		}
+		return false;
+	}
 }

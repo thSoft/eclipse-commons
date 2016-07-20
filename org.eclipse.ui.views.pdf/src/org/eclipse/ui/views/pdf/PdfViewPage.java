@@ -166,9 +166,7 @@ public class PdfViewPage extends ScrolledComposite {
 			renderJob.obtainImage();
 			renderJob.schedule();
 			waitForJob(renderJob);
-			if(renderJob.getResult()!=null){
-				createHyperlinks();
-			}
+			createHyperlinks();
 		}
 	}
 
@@ -589,6 +587,9 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 
 		private void waitForPageAnnotationsToBeLoaded(IProgressMonitor monitor){
+			if(renderJob.getResult()==null){
+				renderJob.schedule();
+			}
 			while(!annotations.containsKey(page)){
 				monitor.setTaskName("waiting for annotations to be loaded");
 				if(monitor.isCanceled()){

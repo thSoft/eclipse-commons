@@ -411,10 +411,12 @@ public class PdfViewPage extends ScrolledComposite {
 	private final Job resetAnnotationsJob=new Job("Resetting point-and-click hyperlinks"){
 		@Override
 		public IStatus run(IProgressMonitor monitor) {
-			renderJob.cancel();
-			loadAnnotationsJob.cancel();
-			waitForJob(loadAnnotationsJob);
-			annotations.clear();
+			if(renderJob.getResult() != null){
+				renderJob.cancel();
+				loadAnnotationsJob.cancel();
+				waitForJob(loadAnnotationsJob);
+				annotations.clear();
+			}
 			return Status.OK_STATUS;
 		}
 	};
@@ -587,16 +589,13 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 
 		private void waitForPageAnnotationsToBeLoaded(IProgressMonitor monitor){
-			if(renderJob.getResult()==null){
-				renderJob.schedule();
-			}
 			while(!annotations.containsKey(page)){
 				monitor.setTaskName("waiting for annotations to be loaded");
 				if(monitor.isCanceled()){
 					return;
 				}
 				pageWithPriorityToLoad=page;
-				if(loadAnnotationsJob.getResult()==Status.CANCEL_STATUS){
+				if(loadAnnotationsJob.getResult()==Status.CANCEL_STATUS || loadAnnotationsJob.getResult()==null){
 					loadAnnotationsJob.schedule();
 				}
 				waitForJob(loadAnnotationsJob);

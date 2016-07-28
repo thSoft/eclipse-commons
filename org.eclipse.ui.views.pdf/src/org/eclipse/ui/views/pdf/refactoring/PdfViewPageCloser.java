@@ -8,6 +8,7 @@ import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.views.file.FileView;
@@ -31,9 +32,14 @@ public class PdfViewPageCloser {
 					IFileViewType<?> fileViewType = fileView.getType();
 					if (fileViewType instanceof PdfViewType) {
 						PdfViewType pdfViewType = (PdfViewType)fileViewType;
-						for (IFile fileToRelease : filesToRelease) {
-							pdfViewType.release(fileToRelease);
-						}
+						Display.getDefault().syncExec(new Runnable(){
+							@Override
+							public void run() {
+								for (IFile fileToRelease : filesToRelease) {
+									pdfViewType.release(fileToRelease);
+								}
+							}
+						});
 					}
 				}
 			}

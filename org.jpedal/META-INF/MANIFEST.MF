@@ -103,4 +103,4 @@ Export-Package: com.idrsolutions.pdf.color.blends,
  org.jpedal.utils,
  org.jpedal.utils.repositories,
  org.jpedal.utils.repositories.generic
-Bundle-ClassPath: OpenViewerFX-6.9.29.jar
+Bundle-ClassPath: OpenViewerFX-6.24.jar

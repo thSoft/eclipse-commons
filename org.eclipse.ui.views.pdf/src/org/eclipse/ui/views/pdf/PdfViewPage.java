@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -470,7 +471,7 @@ public class PdfViewPage extends ScrolledComposite {
 					PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
 					try {
 						byte[] uriDecodedBytes = anchor.getTextStreamValue(PdfDictionary.URI).getBytes(ISOCHARSET); 
-						URI uri = new URI(new String(uriDecodedBytes));
+						URI uri = new URI(StringEscapeUtils.unescapeHtml(new String(uriDecodedBytes)));
 						if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
 							String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
 							String path = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$

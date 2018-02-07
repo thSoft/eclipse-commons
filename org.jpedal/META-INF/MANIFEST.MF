@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: JPedal
 Bundle-SymbolicName: org.jpedal
-Bundle-Version: 6.9.29
+Bundle-Version: 6.24
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: IDRsolutions
 Export-Package: com.idrsolutions.pdf.color.blends,

@@ -37,6 +37,9 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 	private PdfViewPage page;
 
 	private void setPage(PdfViewPage page) {
+		if(this.page!=null && page!=this.page){
+			this.page.setPageInactive();
+		}
 		this.page = page;
 	}
 

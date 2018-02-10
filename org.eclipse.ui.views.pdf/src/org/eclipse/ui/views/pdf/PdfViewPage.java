@@ -20,7 +20,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jface.util.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
@@ -28,18 +27,15 @@ import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.util.ImageUtils;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
-import org.jpedal.PdfDecoderFX;
+import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
 import org.jpedal.objects.PdfPageData;
-import org.jpedal.objects.acroforms.AcroRenderer;
+import org.jpedal.objects.acroforms.rendering.AcroRenderer;
 import org.jpedal.objects.raw.FormObject;
 import org.jpedal.objects.raw.PdfArrayIterator;
 import org.jpedal.objects.raw.PdfDictionary;
@@ -51,18 +47,10 @@ public class PdfViewPage extends ScrolledComposite {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		pdfDisplay = new Composite(this, SWT.NONE);
 		pdfDisplay.setBackgroundMode(SWT.INHERIT_FORCE);
-		if(pdfDecoder==null){
-			pdfDisplay.setLayout(new GridLayout());
-			Label errorLabel = new Label(pdfDisplay, SWT.CENTER);
-			errorLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
-			errorLabel.setText(Activator.MISSING_JVM_ARGUMENT_ERROR);
-			pdfDisplay.pack(true);
-		}else{
-			getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
-			getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
-			pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
-			setFile(file);
-		}
+		getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
+		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
+		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
+		setFile(file);
 		setShowFocusedControl(true);
 		setContent(pdfDisplay);
 		PdfViewScrollHandler.fixNegativeOriginMouseScrollBug(this);
@@ -78,20 +66,10 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The PDF engine which renders the pages.
 	 */
-	private final PdfDecoderFX pdfDecoder = createDecoder();
-
-	private PdfDecoderFX createDecoder(){
-		try {
-			return new PdfDecoderFX();
-		} catch (NoClassDefFoundError e) {
-			return null;
-		}
-	}
-	
+	private final PdfDecoder pdfDecoder = new PdfDecoder();
 
 	private final RenderJob renderJob=new RenderJob();
 
-	private static final boolean IS_MAC=Util.isMac();
 	private class RenderJob extends Job{
 
 		private BufferedImage pageAsImage;
@@ -100,9 +78,6 @@ public class PdfViewPage extends ScrolledComposite {
 		}
 
 		public void obtainImage(){
-			if(IS_MAC){
-				Activator.initializeToolkit();
-			}
 			pdfDecoder.setPageParameters(getZoom(), getPage());
 			try {
 				pageAsImage=pdfDecoder.getPageAsImage(getPage());
@@ -518,16 +493,20 @@ public class PdfViewPage extends ScrolledComposite {
 			monitor.setTaskName(getFileName()+" page "+page);
 			List<PdfAnnotation> annotationsOnPage = new ArrayList<PdfAnnotation>();
 
-			//TODO This getter call accounts for 70-99% of the time spent in this method!!
+			//TODO check if this is still correct:
+			//This getter call accounts for 70-99% of the time spent in this method!!
 			//Is there a later more performant jpedal version that can be used?
 			//Can the currently used version be patched?
 			PdfArrayIterator pdfAnnotations = formRenderer.getAnnotsOnPage(page);
-
-			Map<String, IFile> fileCache=new HashMap<String, IFile>();
-			while (!monitor.isCanceled() && pdfAnnotations.hasMoreTokens()) {
-				String key = pdfAnnotations.getNextValueAsString(true);
-				FormObject rawObject = formRenderer.getFormObject(key);
-				addRawObjectToPdfAnnotationList(page, rawObject, annotationsOnPage, fileCache);
+			if(pdfAnnotations!=null){
+				Map<String, IFile> fileCache=new HashMap<String, IFile>();
+				while (!monitor.isCanceled() && pdfAnnotations.hasMoreTokens()) {
+					String key = pdfAnnotations.getNextValueAsString(true);
+					Object rawObject = formRenderer.getFormDataAsObject(key);
+					if(rawObject!=null && rawObject instanceof FormObject){
+						addRawObjectToPdfAnnotationList(page, (FormObject)rawObject, annotationsOnPage, fileCache);
+					}
+				}
 			}
 			return annotationsOnPage;
 		}

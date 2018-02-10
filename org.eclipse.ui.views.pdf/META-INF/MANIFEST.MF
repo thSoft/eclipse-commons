@@ -7,7 +7,7 @@ Bundle-Vendor: Open Source Community
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.core.resources;bundle-version="3.6.0",
- org.jpedal;bundle-version="6.9.29",
+ org.jpedal;bundle-version="[4.21.56,5.0.0)",
  org.eclipse.swt.util;bundle-version="0.0.0",
  org.eclipse.util;bundle-version="0.0.0";visibility:=reexport,
  org.eclipse.ui.views.file;bundle-version="0.1.0";visibility:=reexport,

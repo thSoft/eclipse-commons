@@ -2,6 +2,9 @@ package org.eclipse.ui.views.midi;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
@@ -241,9 +244,12 @@ public class MidiViewPage extends ScrolledComposite {
 
 	private void addTracks(Composite parent) {
 		tracks = new TableViewer(parent, SWT.BORDER | SWT.NO_SCROLL|SWT.FULL_SELECTION);
+		editingSupportMap = new HashMap<>();
 		for (TrackColumn trackColumn : TrackColumn.values()) {
 			TableViewerColumn tableViewerColumn = new TableViewerColumn(tracks, SWT.NONE);
-			tableViewerColumn.setEditingSupport(new TrackEditingSupport(tracks, trackColumn));
+			TrackEditingSupport editingSupport = new TrackEditingSupport(tracks, trackColumn);
+			tableViewerColumn.setEditingSupport(editingSupport);
+			editingSupportMap.put(trackColumn, editingSupport);
 			TableColumn tableColumn = tableViewerColumn.getColumn();
 			tableColumn.setText(trackColumn.name);
 			tableColumn.setImage(Activator.getImageDescriptor(ICON_PATH + trackColumn.iconFilename).createImage());
@@ -401,6 +407,8 @@ public class MidiViewPage extends ScrolledComposite {
 
 	}
 
+	private Map<TrackColumn, TrackEditingSupport> editingSupportMap;
+
 	public class TrackEditingSupport extends EditingSupport {
 
 		private final TrackColumn column;
@@ -434,6 +442,28 @@ public class MidiViewPage extends ScrolledComposite {
 			int trackNumber = MidiUtils.getTrackNumber(sequencer, (Track)element);
 			column.setValue(sequencer, trackNumber, value);
 			getViewer().update(element, null);
+			maybeToggleOtherColumn(element, value);
+		}
+
+		private void maybeToggleOtherColumn(Object element, Object value){
+			if(value == Boolean.TRUE){
+				if(column == TrackColumn.SOLO){
+					//unmute self
+					uncheck(element, TrackColumn.MUTE);
+				}else if(column == TrackColumn.MUTE){
+					//unsolo self
+					uncheck(element, TrackColumn.SOLO);
+				}
+			}
+		}
+
+		private void uncheck(Object element, TrackColumn otherColumn){
+			TrackEditingSupport trackEditingSupport = editingSupportMap.get(otherColumn);
+			//unmute self
+			if(trackEditingSupport!=null){
+				trackEditingSupport.setValue(element, false);
+			}
+
 		}
 
 	}

@@ -27,11 +27,7 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 
 	@Override
 	public IContributionItem[] getToolbarContributions() {
-		if(Activator.getInstance().isJavaFxRuntimeAvailable()){
-			return toolbar.getToolbarContributions();
-		}else{
-			return new IContributionItem[]{};
-		}
+		return toolbar.getToolbarContributions();
 	}
 
 	private PdfViewPage page;

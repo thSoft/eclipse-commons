@@ -659,7 +659,7 @@ public class PdfViewPage extends ScrolledComposite {
 	/**
 	 * The space between the highlighted hyperlink and its outline.
 	 */
-	private static final float HYPERLINK_HIGHLIGHT_PADDING = 3;
+	private static final float HYPERLINK_HIGHLIGHT_PADDING = 5;
 
 	/**
 	 * Reveals and highlights the hyperlink of the given annotation.

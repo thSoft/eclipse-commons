@@ -22,6 +22,8 @@ import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
@@ -52,6 +54,18 @@ public class PdfViewPage extends ScrolledComposite {
 		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
 		setFile(file);
 		setShowFocusedControl(true);
+		addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusLost(FocusEvent e) {
+				disposeOldHyperlinks();
+			}
+			@Override
+			public void focusGained(FocusEvent e) {
+				if(highlightedHyperlink==null){
+					createHyperlinks();
+				}
+			}
+		});
 		setContent(pdfDisplay);
 		PdfViewScrollHandler.fixNegativeOriginMouseScrollBug(this);
 	}
@@ -214,6 +228,7 @@ public class PdfViewPage extends ScrolledComposite {
 			waitForJob(loadAnnotationsJob);
 			createHyperlinksJob.cancel();
 			waitForJob(createHyperlinksJob);
+			disposeOldHyperlinks();
 			pdfDecoder.closePdfFile();
 		}
 		pdfDisplay.dispose();
@@ -240,6 +255,10 @@ public class PdfViewPage extends ScrolledComposite {
 			this.page = page;
 		}
 		redraw();
+	}
+
+	public void setPageInactive(){
+		disposeOldHyperlinks();
 	}
 
 	/**
@@ -552,22 +571,6 @@ public class PdfViewPage extends ScrolledComposite {
 			return monitor.isCanceled()?Status.CANCEL_STATUS:Status.OK_STATUS;
 		}
 
-		private void disposeOldHyperlinks(){
-			Display.getDefault().syncExec(new Runnable() {
-
-				@Override
-				public void run() {
-					if(!pdfDisplay.isDisposed()){
-						Control[] oldHyperlinks = pdfDisplay.getChildren();
-						for (Control oldHyperlink : oldHyperlinks) {
-							oldHyperlink.dispose();
-						}
-					}
-				}
-
-			});
-		}
-
 		private void waitForPageAnnotationsToBeLoaded(IProgressMonitor monitor){
 			while(!annotations.containsKey(page)){
 				monitor.setTaskName("waiting for annotations to be loaded");
@@ -611,6 +614,23 @@ public class PdfViewPage extends ScrolledComposite {
 			});
 		}
 	};
+
+	private void disposeOldHyperlinks(){
+		Display.getDefault().syncExec(new Runnable() {
+
+			@Override
+			public void run() {
+				if(!pdfDisplay.isDisposed()){
+					Control[] oldHyperlinks = pdfDisplay.getChildren();
+					for (Control oldHyperlink : oldHyperlinks) {
+						oldHyperlink.dispose();
+					}
+				}
+			}
+
+		});
+	}
+
 
 	/**
 	 * Creates point-and-click hyperlinks from the hyperlink annotations on the

@@ -51,7 +51,6 @@ public class PdfViewPage extends ScrolledComposite {
 		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
 		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
 		setFile(file);
-		setShowFocusedControl(true);
 		setContent(pdfDisplay);
 		PdfViewScrollHandler.fixNegativeOriginMouseScrollBug(this);
 	}
@@ -671,9 +670,31 @@ public class PdfViewPage extends ScrolledComposite {
 		PdfAnnotationHyperlink hyperlink = annotationHyperlinkMap.get(annotation);
 		if (hyperlink != null) {
 			highlightedHyperlink = hyperlink;
-			hyperlink.setFocus();
+			scrollTo(hyperlink);
 			hyperlinkHighlightAnimator.start();
 		}
+	}
+
+	private void scrollTo(Control control) {
+		Rectangle itemRect = getDisplay().map(control.getParent(), this, control.getBounds());
+		final int padding = 10;
+		itemRect.x -= padding;
+		itemRect.y -= padding;
+		itemRect.width += padding * 2;
+		itemRect.height += padding * 2;
+		Rectangle area = getClientArea();
+		Point origin = getOrigin();
+		if (itemRect.x < 0) {
+			origin.x = Math.max(0, origin.x + itemRect.x);
+		} else {
+			if (area.width < itemRect.x + itemRect.width) origin.x = Math.max(0, origin.x + itemRect.x + Math.min(itemRect.width, area.width) - area.width);
+		}
+		if (itemRect.y < 0) {
+			origin.y = Math.max(0, origin.y + itemRect.y);
+		} else {
+			if (area.height < itemRect.y + itemRect.height) origin.y = Math.max(0, origin.y + itemRect.y + Math.min(itemRect.height, area.height) - area.height);
+		}
+		setOrigin(origin);		
 	}
 
 	private static int hyperlinkHighlightAlpha;

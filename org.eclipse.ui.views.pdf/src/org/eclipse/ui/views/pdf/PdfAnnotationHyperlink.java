@@ -12,7 +12,7 @@ import org.eclipse.util.TextEditorUtils;
 public class PdfAnnotationHyperlink extends Composite {
 
 	public PdfAnnotationHyperlink(Composite parent, final PdfAnnotation annotation) {
-		super(parent, SWT.NONE);
+		super(parent, SWT.NO_BACKGROUND);
 		setCursor(new Cursor(Display.getDefault(), SWT.CURSOR_HAND));
 		final FileEditorInput editorInput = new FileEditorInput(annotation.file);
 		addMouseListener(new MouseAdapter() {

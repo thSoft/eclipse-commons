@@ -33,6 +33,14 @@ public class PdfViewType implements IFileViewType<PdfViewPage> {
 	private PdfViewPage page;
 
 	private void setPage(PdfViewPage page) {
+		if(page!=this.page){
+			if(this.page!=null){
+				this.page.setPageInForeground(false);
+			}
+			if(page!=null){
+				page.setPageInForeground(true);
+			}
+		}
 		this.page = page;
 	}
 

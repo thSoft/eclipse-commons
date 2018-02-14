@@ -22,6 +22,8 @@ import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
@@ -43,6 +45,8 @@ import org.jpedal.objects.raw.PdfObject;
 
 public class PdfViewPage extends ScrolledComposite {
 
+	private boolean DESTROY_LINKS_ON_FOCUS_LOSS=Boolean.parseBoolean(System.getProperty("pdfViewDestroyLinks","false"));			
+
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		pdfDisplay = new Composite(this, SWT.NONE);
@@ -52,6 +56,22 @@ public class PdfViewPage extends ScrolledComposite {
 		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
 		setFile(file);
 		setContent(pdfDisplay);
+		if(DESTROY_LINKS_ON_FOCUS_LOSS){
+			addFocusListener(new FocusListener() {
+				
+				@Override
+				public void focusLost(FocusEvent e) {
+					disposeOldHyperlinks();
+				}
+
+				@Override
+				public void focusGained(FocusEvent e) {
+					if(highlightedHyperlink==null){
+						createHyperlinks();
+					}
+				}
+			});
+		}
 		PdfViewScrollHandler.fixNegativeOriginMouseScrollBug(this);
 	}
 
@@ -246,7 +266,7 @@ public class PdfViewPage extends ScrolledComposite {
 	public void setPageInForeground(boolean putInForeGround){
 		if(!putInForeGround){
 			disposeOldHyperlinks();
-		}else{
+		}else if(!DESTROY_LINKS_ON_FOCUS_LOSS){
 			createHyperlinks();
 		}
 	}

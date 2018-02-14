@@ -213,6 +213,8 @@ public class PdfViewPage extends ScrolledComposite {
 			waitForJob(loadAnnotationsJob);
 			createHyperlinksJob.cancel();
 			waitForJob(createHyperlinksJob);
+			disposeOldHyperlinks();
+			annotationHyperlinkMap.clear();
 			pdfDecoder.closePdfFile();
 		}
 		pdfDisplay.dispose();
@@ -239,6 +241,14 @@ public class PdfViewPage extends ScrolledComposite {
 			this.page = page;
 		}
 		redraw();
+	}
+
+	public void setPageInForeground(boolean putInForeGround){
+		if(!putInForeGround){
+			disposeOldHyperlinks();
+		}else{
+			createHyperlinks();
+		}
 	}
 
 	/**
@@ -551,22 +561,6 @@ public class PdfViewPage extends ScrolledComposite {
 			return monitor.isCanceled()?Status.CANCEL_STATUS:Status.OK_STATUS;
 		}
 
-		private void disposeOldHyperlinks(){
-			Display.getDefault().syncExec(new Runnable() {
-
-				@Override
-				public void run() {
-					if(!pdfDisplay.isDisposed()){
-						Control[] oldHyperlinks = pdfDisplay.getChildren();
-						for (Control oldHyperlink : oldHyperlinks) {
-							oldHyperlink.dispose();
-						}
-					}
-				}
-
-			});
-		}
-
 		private void waitForPageAnnotationsToBeLoaded(IProgressMonitor monitor){
 			while(!annotations.containsKey(page)){
 				monitor.setTaskName("waiting for annotations to be loaded");
@@ -610,6 +604,23 @@ public class PdfViewPage extends ScrolledComposite {
 			});
 		}
 	};
+
+	private void disposeOldHyperlinks(){
+		Display.getDefault().syncExec(new Runnable() {
+
+			@Override
+			public void run() {
+				if(!pdfDisplay.isDisposed()){
+					Control[] oldHyperlinks = pdfDisplay.getChildren();
+					for (Control oldHyperlink : oldHyperlinks) {
+						oldHyperlink.dispose();
+					}
+				}
+			}
+
+		});
+	}
+
 
 	/**
 	 * Creates point-and-click hyperlinks from the hyperlink annotations on the

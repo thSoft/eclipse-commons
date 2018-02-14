@@ -22,6 +22,8 @@ import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Image;
@@ -31,6 +33,9 @@ import org.eclipse.swt.util.ImageUtils;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.contexts.IContextActivation;
+import org.eclipse.ui.contexts.IContextService;
 import org.eclipse.ui.views.pdf.PdfViewToolbarManager.FitToAction;
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
@@ -43,6 +48,8 @@ import org.jpedal.objects.raw.PdfObject;
 
 public class PdfViewPage extends ScrolledComposite {
 
+	private static final String CONTEXT="org.eclipse.ui.views.pdf.scoreview";
+
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		pdfDisplay = new Composite(this, SWT.NONE);
@@ -51,6 +58,7 @@ public class PdfViewPage extends ScrolledComposite {
 		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
 		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
 		setFile(file);
+		addFocusListener(new PdfViewFocusListener());
 		setContent(pdfDisplay);
 		PdfViewScrollHandler.fixNegativeOriginMouseScrollBug(this);
 	}
@@ -844,6 +852,31 @@ public class PdfViewPage extends ScrolledComposite {
 			Display.getDefault().timerExec(INTERVAL, this);
 		}
 
+	}
+
+	private class PdfViewFocusListener implements FocusListener{
+		private IContextActivation activation;
+		@Override
+		public void focusLost(FocusEvent e) {
+			toggleContext(false);
+		}
+		@Override
+		public void focusGained(FocusEvent e) {
+			toggleContext(true);
+		}
+
+		private void toggleContext(boolean activate){
+			IContextService service = (IContextService)PlatformUI.getWorkbench().getService(IContextService.class);
+			if(service != null){
+				if(activation != null){
+					service.deactivateContext(activation);
+					activation = null;
+				}
+				if(activate){
+					activation=service.activateContext(CONTEXT);
+				}
+			}
+		}
 	}
 
 }

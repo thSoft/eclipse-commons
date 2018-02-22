@@ -2,6 +2,9 @@ package org.eclipse.ui.views.midi;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
@@ -32,6 +35,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 
 public class MidiViewPage extends ScrolledComposite {
 
@@ -241,9 +245,12 @@ public class MidiViewPage extends ScrolledComposite {
 
 	private void addTracks(Composite parent) {
 		tracks = new TableViewer(parent, SWT.BORDER | SWT.NO_SCROLL|SWT.FULL_SELECTION);
+		editingSupportMap = new HashMap<>();
 		for (TrackColumn trackColumn : TrackColumn.values()) {
 			TableViewerColumn tableViewerColumn = new TableViewerColumn(tracks, SWT.NONE);
-			tableViewerColumn.setEditingSupport(new TrackEditingSupport(tracks, trackColumn));
+			TrackEditingSupport editingSupport = new TrackEditingSupport(tracks, trackColumn);
+			tableViewerColumn.setEditingSupport(editingSupport);
+			editingSupportMap.put(trackColumn, editingSupport);
 			TableColumn tableColumn = tableViewerColumn.getColumn();
 			tableColumn.setText(trackColumn.name);
 			tableColumn.setImage(Activator.getImageDescriptor(ICON_PATH + trackColumn.iconFilename).createImage());
@@ -401,6 +408,8 @@ public class MidiViewPage extends ScrolledComposite {
 
 	}
 
+	private Map<TrackColumn, TrackEditingSupport> editingSupportMap;
+
 	public class TrackEditingSupport extends EditingSupport {
 
 		private final TrackColumn column;
@@ -420,6 +429,11 @@ public class MidiViewPage extends ScrolledComposite {
 
 		@Override
 		protected boolean canEdit(Object element) {
+			if(column == TrackColumn.MUTE){
+				TrackEditingSupport soloTrackEditingSupport = editingSupportMap.get(TrackColumn.SOLO);
+				boolean trackToMuteIsAlreadySetToSolo = soloTrackEditingSupport!=null && Boolean.TRUE.equals(soloTrackEditingSupport.getValue(element));
+				return !trackToMuteIsAlreadySetToSolo;
+			} 
 			return cellEditor != null;
 		}
 
@@ -434,6 +448,27 @@ public class MidiViewPage extends ScrolledComposite {
 			int trackNumber = MidiUtils.getTrackNumber(sequencer, (Track)element);
 			column.setValue(sequencer, trackNumber, value);
 			getViewer().update(element, null);
+			maybeHandleSettingSolo(element, value);
+		}
+
+		private void maybeHandleSettingSolo(Object element, Object value){
+			if(column == TrackColumn.SOLO && value == Boolean.TRUE){
+				//remove solo from all other tracks, unmute self
+				TableItem[] items = ((TableViewer)getViewer()).getTable().getItems();
+				for (TableItem tableItem : items) {
+					Object track = tableItem.getData();
+					if(track instanceof Track){
+						if(track != element){
+							setValue(track, false);
+						} else {
+							TrackEditingSupport muteTrackEditingSupport = editingSupportMap.get(TrackColumn.MUTE);
+							if(muteTrackEditingSupport!=null){
+								muteTrackEditingSupport.setValue(element, false);
+							}
+						}
+					}
+				}
+			}
 		}
 
 	}

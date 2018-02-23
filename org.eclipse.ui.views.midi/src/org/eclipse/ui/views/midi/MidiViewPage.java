@@ -2,14 +2,15 @@ package org.eclipse.ui.views.midi;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
-import javax.sound.midi.Synthesizer;
 import javax.sound.midi.Track;
 import javax.util.midi.MidiUtils;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CheckboxCellEditor;
@@ -41,8 +42,6 @@ public class MidiViewPage extends ScrolledComposite {
 
 	private final Sequencer sequencer;
 
-	private final Synthesizer synthesizer;
-
 	public MidiViewPage(Composite parent, IFile file) throws MidiUnavailableException, InvalidMidiDataException, IOException {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		setExpandHorizontal(true);
@@ -53,12 +52,8 @@ public class MidiViewPage extends ScrolledComposite {
 
 		sequencer = MidiSystem.getSequencer();
 		sequencer.open();
-		synthesizer = MidiSystem.getSynthesizer();
-		synthesizer.open();
-		sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
 
 		addTime(content);
-		addVolume(content);
 		addTempo(content);
 		addTracks(content);
 		for (Control child : content.getChildren()) {
@@ -98,7 +93,6 @@ public class MidiViewPage extends ScrolledComposite {
 
 	public void closeFile() {
 		pause();
-		synthesizer.close();
 		sequencer.close();
 		content.dispose();
 		this.dispose();
@@ -188,27 +182,6 @@ public class MidiViewPage extends ScrolledComposite {
 			}
 		}
 
-	}
-
-	// Volume
-
-	private static final int MAX_VOLUME = 100;
-
-	private void addVolume(Composite parent) {
-		new NumericValueEditor(parent, "Volume", Activator.getImageDescriptor(ICON_PATH + "Volume.png"), Activator.getImageDescriptor(ICON_PATH + "Reset.png"), MAX_VOLUME, MAX_VOLUME / 2, new ValueHooks() { //$NON-NLS-2$ //$NON-NLS-3$
-
-			@Override
-			public String display(int value) {
-				return MessageFormat.format("{0}%", value);
-			}
-
-			@Override
-			public void valueSet(int value) {
-				int volume = (value * 127) / 100;
-				MidiUtils.setVolume(synthesizer, volume);
-			}
-
-		});
 	}
 
 	// Tempo

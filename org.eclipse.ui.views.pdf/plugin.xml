@@ -111,85 +111,85 @@
         point="org.eclipse.ui.bindings">
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomIn"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="M1++">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomOut"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="M1+-">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomNormal"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="M1+0">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomHeight"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="M1+ARROW_UP">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomWidth"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="M1+ARROW_RIGHT">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.ZoomPage"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="M1+ARROW_DOWN">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.NavigateFirst"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="HOME">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.NavigateLast"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="END">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.NavigateNext"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="PAGE_DOWN">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.NavigatePrevious"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="PAGE_UP">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.scroll"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="ARROW_DOWN">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.scroll"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="ARROW_UP">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.scroll"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="ARROW_LEFT">
      </key>
      <key
            commandId="org.eclipse.ui.views.pdf.scroll"
-           contextId="org.eclipse.ui.views.pdf.scoreview"
+           contextId="org.eclipse.ui.views.pdf.context"
            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
            sequence="ARROW_RIGHT">
      </key>
@@ -213,7 +213,7 @@
         point="org.eclipse.ui.contexts">
      <context
            description="Score view is active"
-           id="org.eclipse.ui.views.pdf.scoreview"
+           id="org.eclipse.ui.views.pdf.context"
            name="In Score view"
            parentId="org.eclipse.ui.contexts.window">
      </context>

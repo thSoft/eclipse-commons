@@ -50,7 +50,7 @@ public class PdfViewPage extends ScrolledComposite {
 
 	private boolean DESTROY_LINKS_ON_FOCUS_LOSS=Boolean.parseBoolean(System.getProperty("pdfViewDestroyLinks","false"));			
 
-	private static final String CONTEXT="org.eclipse.ui.views.pdf.scoreview";
+	private static final String CONTEXT="org.eclipse.ui.views.pdf.context";
 
 	public PdfViewPage(Composite parent, IFile file) throws PdfException {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);

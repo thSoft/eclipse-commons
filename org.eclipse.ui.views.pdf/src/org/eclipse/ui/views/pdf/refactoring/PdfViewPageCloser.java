@@ -75,7 +75,7 @@ public class PdfViewPageCloser {
 	}
 
 	private static boolean isPdf(IFile file){
-		return file.getFileExtension().equals(PdfViewType.EXTENSION);
+		return PdfViewType.EXTENSION.equals(file.getFileExtension());
 	}
 
 }

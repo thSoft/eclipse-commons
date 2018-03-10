@@ -491,8 +491,10 @@ public class PdfViewPage extends ScrolledComposite {
 							}else{
 								URL url = new URL("file", null, path); //$NON-NLS-1$
 								IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
-								if(files.length>0){
-									targetFile=files[0];
+								for (IFile iFile : files) {
+									if(iFile.exists()) {
+										targetFile=iFile;
+									}
 								}
 								fileCache.put(path, targetFile);
 							}

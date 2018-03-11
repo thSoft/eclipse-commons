@@ -119,7 +119,6 @@ public class PdfViewPage extends ScrolledComposite {
 			}
 
 			final BufferedImage awtImage=pageAsImage;
-			final Image swtImage = new Image(Display.getDefault(), ImageUtils.convertBufferedImageToImageData(awtImage));
 			Display.getDefault().syncExec(new Runnable() {
 
 				@Override
@@ -127,6 +126,7 @@ public class PdfViewPage extends ScrolledComposite {
 					if(pdfDisplay.isDisposed()){
 						return;
 					}
+					Image swtImage = new Image(getDisplay(), ImageUtils.convertBufferedImageToImageData(awtImage));
 					Image oldImage = pdfDisplay.getBackgroundImage();
 					if (oldImage != null) {
 						oldImage.dispose();

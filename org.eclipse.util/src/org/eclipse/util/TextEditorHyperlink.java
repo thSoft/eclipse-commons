@@ -36,7 +36,7 @@ public class TextEditorHyperlink implements IHyperlink {
 	}
 
 	public void linkActivated() {
-		TextEditorUtils.revealPosition(editorInput, lineNumber, columnNumber, tabWidth);
+		TextEditorUtils.revealPosition(editorInput.getFile(), lineNumber, columnNumber, tabWidth);
 	}
 
 	public void linkEntered() {

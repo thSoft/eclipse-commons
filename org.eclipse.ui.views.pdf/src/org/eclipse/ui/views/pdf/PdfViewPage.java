@@ -2,10 +2,9 @@ package org.eclipse.ui.views.pdf;
 
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.net.MalformedURLException;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +17,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
@@ -485,23 +483,26 @@ public class PdfViewPage extends ScrolledComposite {
 						if (uri.getScheme().equals("textedit")) { //$NON-NLS-1$
 							String[] sections = uri.getPath().split(":"); //$NON-NLS-1$
 							String path = (uri.getAuthority() == null ? "" : uri.getAuthority()) + sections[0]; //$NON-NLS-1$
-							IFile targetFile=null;
-							if(fileCache.containsKey(path)){
-								targetFile=fileCache.get(path);
-							}else{
-								URL url = new URL("file", null, path); //$NON-NLS-1$
-								IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(URIUtil.toURI(url));
-								for (IFile iFile : files) {
-									if(iFile.exists()) {
-										targetFile=iFile;
+							IFile targetIFile=null;
+							File targetFile = new File(path).getAbsoluteFile();
+							if(targetFile.exists()) {
+								URI targetURI=targetFile.toURI();
+								//TODO all targetIFile will be removed later
+								if(fileCache.containsKey(path)){
+									targetIFile=fileCache.get(path);
+								}else{
+									IFile[] files = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(targetURI);
+									for (IFile iFile : files) {
+										if(iFile.exists()) {
+											targetIFile=iFile;
+										}
 									}
+									fileCache.put(path, targetIFile);
 								}
-								fileCache.put(path, targetFile);
-							}
-							if (targetFile!=null) {
 								PdfAnnotation annotation = new PdfAnnotation();
 								annotation.page = page;
-								annotation.file = targetFile;
+								annotation.fileURI = targetURI;
+								annotation.file = targetIFile;
 								annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
 								annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
 								float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);
@@ -516,8 +517,6 @@ public class PdfViewPage extends ScrolledComposite {
 						Activator.logError("Invalid annotation URI", e);
 					} catch (ArrayIndexOutOfBoundsException e) {
 						Activator.logError("Error while parsing annotation URI", e);
-					} catch (MalformedURLException e) {
-						Activator.logError("Can't transform URI to URL", e);
 					}
 				}
 		}

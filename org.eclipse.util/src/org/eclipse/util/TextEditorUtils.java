@@ -3,7 +3,6 @@ package org.eclipse.util;
 import java.io.File;
 import java.net.URI;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.jface.dialogs.PopupDialog;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
@@ -53,7 +52,7 @@ public class TextEditorUtils {
 			} else {
 				IWorkbenchPage page = UiUtils.getWorkbenchPage();
 				try {
-					IEditorPart editor = IDE.openEditor(page, URIUtil.toURI(fileURI.toURL()), editorDescriptor.getId(), true);
+					IEditorPart editor = IDE.openEditor(page, fileURI, editorDescriptor.getId(), true);
 					revealPosition(editor, lineNumber, columnNumber, tabWidth);
 				} catch (Exception e) {
 					e.printStackTrace();

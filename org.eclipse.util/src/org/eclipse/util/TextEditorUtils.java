@@ -52,7 +52,7 @@ public class TextEditorUtils {
 			} else {
 				IWorkbenchPage page = UiUtils.getWorkbenchPage();
 				try {
-					IEditorPart editor = IDE.openEditor(page, fileURI, editorDescriptor.getId(), true);
+					IEditorPart editor = IDE.openEditor(page, fileURI.normalize(), editorDescriptor.getId(), true);
 					revealPosition(editor, lineNumber, columnNumber, tabWidth);
 				} catch (Exception e) {
 					e.printStackTrace();

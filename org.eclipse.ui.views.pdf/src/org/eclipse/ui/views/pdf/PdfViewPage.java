@@ -486,8 +486,9 @@ public class PdfViewPage extends ScrolledComposite {
 							IFile targetIFile=null;
 							File targetFile = new File(path).getAbsoluteFile();
 							if(targetFile.exists()) {
-								URI targetURI=targetFile.toURI();
+								URI targetURI=targetFile.toURI().normalize();
 								//TODO all targetIFile will be removed later
+								//reuse file cache for path->targetFile 
 								if(fileCache.containsKey(path)){
 									targetIFile=fileCache.get(path);
 								}else{

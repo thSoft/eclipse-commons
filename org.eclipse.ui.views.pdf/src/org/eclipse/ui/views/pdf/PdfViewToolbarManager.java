@@ -18,8 +18,6 @@ import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -220,21 +218,9 @@ public class PdfViewToolbarManager {
 
 		@Override
 		protected Control createControl(Composite parent) {
-			Composite container = new Composite(parent, SWT.NONE);
-			GridLayout layout = new GridLayout();
-			layout.marginHeight = 0;
-			layout.marginWidth = 1;
-			container.setLayout(layout);
-			label = new Label(container, SWT.CENTER);
-			GridData layoutData = new GridData();
-			layoutData.verticalAlignment = SWT.CENTER;
-			layoutData.grabExcessVerticalSpace = true;
-			//TODO remove hint once resizing the label works
-			layoutData.widthHint=22;
-			layoutData.horizontalAlignment=SWT.CENTER;
-			label.setLayoutData(layoutData);
+			label = new Label(parent, SWT.CENTER);
 			update();
-			return container;
+			return label;
 		}
 
 		@Override
@@ -242,7 +228,13 @@ public class PdfViewToolbarManager {
 			if ((label != null) && !label.isDisposed()) {
 				label.setText(MessageFormat.format("/{0}", getPage().getPageCount()));
 				label.setToolTipText("Page count");
+				label.getParent().update();
 			}
+		}
+		
+		@Override
+		public boolean isDynamic() {
+			return true;
 		}
 
 	}

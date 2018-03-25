@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: JPedal
 Bundle-SymbolicName: org.jpedal
 Bundle-Version: 4.21.56
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: IDRsolutions
 Export-Package: com.idrsolutions.pdf.acroforms.xfa,
  com.l2fprod.common,

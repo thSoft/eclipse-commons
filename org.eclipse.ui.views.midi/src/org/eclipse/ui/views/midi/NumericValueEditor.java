@@ -50,7 +50,8 @@ public class NumericValueEditor extends Composite {
 	public void setMaximumValue(int maximumValue) {
 		this.maximumValue = maximumValue;
 		slider.setMaximum(maximumValue + 1);
-		slider.setPageIncrement(maximumValue / 100);
+		slider.setPageIncrement(maximumValue / 10);
+		slider.setIncrement(maximumValue / 100);
 		setValue(getValue());
 	}
 

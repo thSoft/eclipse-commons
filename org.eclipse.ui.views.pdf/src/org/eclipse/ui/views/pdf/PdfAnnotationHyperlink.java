@@ -10,8 +10,19 @@ import org.eclipse.util.TextEditorUtils;
 
 public class PdfAnnotationHyperlink extends Composite {
 
+	private static int STYLE= getHyperlinkStyle();
+
+	private static int getHyperlinkStyle() {
+		String system = System.getProperty("os.name", "unknown").toLowerCase();
+		if(system.contains("wins")) {
+			return SWT.NONE; //prevent potential scrolling problems caused by #32
+		}else {
+			return SWT.TRANSPARENT | SWT.NO_BACKGROUND;
+		}
+	}
+
 	public PdfAnnotationHyperlink(Composite parent, final PdfAnnotation annotation) {
-		super(parent, SWT.TRANSPARENT | SWT.NO_BACKGROUND); // Both are needed for correct cross-platform behavior
+		super(parent, STYLE);
 		setCursor(new Cursor(Display.getDefault(), SWT.CURSOR_HAND));
 		addMouseListener(new MouseAdapter() {
 

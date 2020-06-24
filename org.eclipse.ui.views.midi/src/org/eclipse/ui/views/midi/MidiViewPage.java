@@ -5,6 +5,7 @@ import java.text.MessageFormat;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
@@ -117,6 +118,7 @@ public class MidiViewPage extends ScrolledComposite {
 		sequencer.start();
 		getPlaybackAction().setPlaying(true);
 		Display.getDefault().timerExec(0, new Updater());
+		updateTimeResetter(true);
 	}
 
 	public void pause() {
@@ -141,9 +143,11 @@ public class MidiViewPage extends ScrolledComposite {
 	// Time
 
 	private NumericValueEditor time;
+	final AtomicInteger markerPosition=new AtomicInteger(0);
+	final int timeDefault=0;
 
 	private void addTime(Composite parent) {
-		time = new NumericValueEditor(parent, "Time", Activator.getImageDescriptor(ICON_PATH + "Time.png"), Activator.getImageDescriptor(ICON_PATH + "Rewind.png"), 0, 0, new ValueHooks() { //$NON-NLS-2$ //$NON-NLS-3$
+		time = new NumericValueEditor(parent, "Time", Activator.getImageDescriptor(ICON_PATH + "Time.png"), Activator.getImageDescriptor(ICON_PATH + "Rewind.png"), 0, timeDefault, new ValueHooks() { //$NON-NLS-2$ //$NON-NLS-3$
 
 			@Override
 			public String display(int value) {
@@ -152,6 +156,7 @@ public class MidiViewPage extends ScrolledComposite {
 
 			@Override
 			public void valueSet(int value) {
+				markerPosition.set(value);
 				sequencer.setMicrosecondPosition(value);
 			}
 
@@ -161,7 +166,28 @@ public class MidiViewPage extends ScrolledComposite {
 				return MessageFormat.format("{0}:{1,number,00}", seconds / secondsInMinute, seconds % secondsInMinute);
 			}
 
-		});
+		}) {
+
+			@Override
+			public void resetValue() {
+				if (getValue() == markerPosition.get()) {
+					setValue(timeDefault);
+				} else {
+					setValue(markerPosition.get());
+				}
+				updateTimeResetter(isPlaying());
+			}
+		};
+	}
+
+	void updateTimeResetter(boolean forceToMarker) {
+		if(forceToMarker) {
+			time.setResetterValue(markerPosition.get());
+		} else if (time.getValue() == markerPosition.get()) {
+			time.setResetterValue(timeDefault);
+		} else {
+			time.setResetterValue(markerPosition.get());
+		}
 	}
 
 	private boolean isFinished() {

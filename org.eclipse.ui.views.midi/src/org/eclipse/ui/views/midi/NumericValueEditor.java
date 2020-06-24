@@ -52,7 +52,7 @@ public class NumericValueEditor extends Composite {
 		slider.setMaximum(maximumValue + 1);
 		slider.setPageIncrement(maximumValue / 10);
 		slider.setIncrement(maximumValue / 100);
-		setValue(getValue());
+		setValue(getValue(), false);
 	}
 
 	private final int defaultValue;
@@ -60,20 +60,22 @@ public class NumericValueEditor extends Composite {
 	private final Slider slider;
 
 	private final Label displayer;
+	private final Button resetter;
 
 	private final ValueHooks hooks;
 
 	public NumericValueEditor(Composite parent, String name, ImageDescriptor icon, ImageDescriptor resetterIcon, int maximumValue, int defaultValue, ValueHooks hooks) {
 		super(parent, SWT.NONE);
+		this.hooks = hooks;
 		setLayout(new GridLayout(4, false));
 
 		Label header = new Label(this, SWT.NONE);
 		header.setImage(icon.createImage());
 		header.setToolTipText(name);
 
-		Button resetter = new Button(this, SWT.FLAT);
+		resetter = new Button(this, SWT.FLAT);
 		resetter.setImage(resetterIcon.createImage());
-		resetter.setToolTipText(MessageFormat.format("Reset to {0}", hooks.display(defaultValue)));
+		setResetterValue(defaultValue);
 		resetter.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -101,10 +103,15 @@ public class NumericValueEditor extends Composite {
 		displayer = new Label(this, SWT.CENTER);
 		displayer.setLayoutData(new GridData(80, SWT.DEFAULT)); // XXX proper width
 
-		this.hooks = hooks;
 		this.setMaximumValue(maximumValue);
 		this.defaultValue = defaultValue;
 		setValue(defaultValue);
+	}
+
+	void setResetterValue(int value) {
+		if(resetter!=null && !resetter.isDisposed()) {
+			resetter.setToolTipText(MessageFormat.format("Reset to {0}", hooks.display(value)));
+		}
 	}
 
 }

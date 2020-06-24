@@ -14,7 +14,7 @@ public class PdfAnnotationHyperlink extends Composite {
 
 	private static int getHyperlinkStyle() {
 		String system = System.getProperty("os.name", "unknown").toLowerCase();
-		if(system.contains("wins")) {
+		if(system.contains("win")) {
 			return SWT.NONE; //prevent potential scrolling problems caused by #32
 		}else {
 			return SWT.TRANSPARENT | SWT.NO_BACKGROUND;

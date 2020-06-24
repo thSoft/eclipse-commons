@@ -178,7 +178,7 @@ public class MidiViewPage extends ScrolledComposite {
 			time.setValue((int)sequencer.getMicrosecondPosition(), false);
 			if (isFinished()) {
 				pause();
-			} else {
+			} else if(isPlaying()){
 				final int millisecondsPerSecond = 1000;
 				final int framesPerSecond = 25;
 				Display.getDefault().timerExec(millisecondsPerSecond / framesPerSecond, this);

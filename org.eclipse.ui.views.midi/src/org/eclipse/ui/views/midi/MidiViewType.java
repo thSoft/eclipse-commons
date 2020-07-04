@@ -38,7 +38,6 @@ public class MidiViewType implements IFileViewType<MidiViewPage> {
 		}
 		setPage(page);
 		toolbar.setPage(page);
-		page.setPlaybackAction(toolbar.getPlaybackAction());
 	}
 
 	@Override

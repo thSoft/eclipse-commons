@@ -2,7 +2,6 @@ package org.eclipse.ui.views.midi;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +32,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 
@@ -44,6 +42,9 @@ public class MidiViewPage extends ScrolledComposite {
 	private final Composite content;
 
 	private final Sequencer sequencer;
+	
+	private final MidiPlaybackControl playbackControl;
+
 
 	public MidiViewPage(Composite parent, IFile file) throws MidiUnavailableException, InvalidMidiDataException, IOException {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -56,7 +57,7 @@ public class MidiViewPage extends ScrolledComposite {
 		sequencer = MidiSystem.getSequencer();
 		sequencer.open();
 
-		addTime(content);
+		playbackControl = new MidiPlaybackControl(content, sequencer);
 		addTempo(content);
 		addTracks(content);
 		for (Control child : content.getChildren()) {
@@ -83,8 +84,7 @@ public class MidiViewPage extends ScrolledComposite {
 	public void setFile(IFile file) throws InvalidMidiDataException, IOException {
 		this.file = file;
 		sequencer.setSequence(MidiSystem.getSequence(file.getRawLocation().toFile()));
-
-		time.setMaximumValue((int)sequencer.getMicrosecondLength());
+		playbackControl.sequencerContentChanged();
 		tracks.setInput(sequencer.getSequence());
 		layoutColumns();
 		setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
@@ -95,101 +95,24 @@ public class MidiViewPage extends ScrolledComposite {
 	}
 
 	public void closeFile() {
-		pause();
+		playbackControl.pause();
 		sequencer.close();
 		content.dispose();
 		this.dispose();
 	}
 
-	// Playback
-
-	private MidiViewToolbarManager.PlaybackAction playbackAction;
-
-	public MidiViewToolbarManager.PlaybackAction getPlaybackAction() {
-		return playbackAction;
-	}
-
-	public void setPlaybackAction(MidiViewToolbarManager.PlaybackAction playbackAction) {
-		this.playbackAction = playbackAction;
-	}
-
-	public void play() {
-		sequencer.start();
-		getPlaybackAction().setPlaying(true);
-		Display.getDefault().timerExec(0, new Updater());
-	}
-
 	public void pause() {
-		if(sequencer.isOpen()){
-			sequencer.stop();
-			getPlaybackAction().setPlaying(false);
-		}
+		playbackControl.pause();
 	}
 
-	public boolean isPlaying() {
-		return sequencer.isRunning();
-	}
-	
 	public void togglePlayback() {
-		if (isPlaying()) {
-			pause();
-		} else {
-			play();
-		}
-	}
-
-	// Time
-
-	private NumericValueEditor time;
-
-	private void addTime(Composite parent) {
-		time = new NumericValueEditor(parent, "Time", Activator.getImageDescriptor(ICON_PATH + "Time.png"), Activator.getImageDescriptor(ICON_PATH + "Rewind.png"), 0, 0, new ValueHooks() { //$NON-NLS-2$ //$NON-NLS-3$
-
-			@Override
-			public String display(int value) {
-				return getDuration(value);
-			}
-
-			@Override
-			public void valueSet(int value) {
-				sequencer.setMicrosecondPosition(value);
-			}
-
-			private String getDuration(long microseconds) {
-				long seconds = microseconds / 1000000;
-				final int secondsInMinute = 60;
-				return MessageFormat.format("{0}:{1,number,00}", seconds / secondsInMinute, seconds % secondsInMinute);
-			}
-
-		});
-	}
-
-	private boolean isFinished() {
-		return sequencer.getMicrosecondPosition() >= sequencer.getMicrosecondLength();
-	}
-
-	private class Updater implements Runnable {
-
-		@Override
-		public void run() {
-			time.setValue((int)sequencer.getMicrosecondPosition(), false);
-			if (isFinished()) {
-				pause();
-				time.resetValue();
-			} else if(isPlaying()){
-				final int millisecondsPerSecond = 1000;
-				final int framesPerSecond = 25;
-				Display.getDefault().timerExec(millisecondsPerSecond / framesPerSecond, this);
-			}
-		}
-
+		playbackControl.togglePlayback();
 	}
 
 	// Tempo
 
-	private static final int MAX_TEMPO_FACTOR = 200;
-
 	private void addTempo(Composite parent) {
+		int MAX_TEMPO_FACTOR = 200;
 		new NumericValueEditor(parent, "Tempo", Activator.getImageDescriptor(ICON_PATH + "Tempo.png"), Activator.getImageDescriptor(ICON_PATH + "Reset.png"), MAX_TEMPO_FACTOR, MAX_TEMPO_FACTOR / 2, new ValueHooks() { //$NON-NLS-2$ //$NON-NLS-3$
 
 			@Override

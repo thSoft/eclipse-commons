@@ -26,6 +26,7 @@ public class MidiPlaybackControl extends Composite {
 	private Label displayer;
 	private final Sequencer sequencer;
 	private Button playPause;
+	private TempoEditor tempoControl;
 
 	public MidiPlaybackControl(Composite parent, Sequencer sequencer) {
 		super(parent, SWT.NONE);
@@ -34,6 +35,7 @@ public class MidiPlaybackControl extends Composite {
 
 		createButtonRow();
 		createSliderRow();
+
 		rewind();
 	}
 
@@ -46,12 +48,20 @@ public class MidiPlaybackControl extends Composite {
 
 		Button tempo = new Button(rowParent, SWT.FLAT);
 		tempo.setImage(getImage("Tempo"));
-		tempo.setToolTipText("Change Tempo");
+		tempo.setToolTipText("Show Tempo Slider");
 		tempo.addSelectionListener(new SelectionAdapter() {
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				if (tempoControl != null && !tempoControl.isDisposed()) {
+					tempoControl.dispose();
+					tempo.setToolTipText("Show Tempo Slider");
+				} else {
+					tempoControl = addAndGetTempoControl(MidiPlaybackControl.this);
+					tempo.setToolTipText("Hide Tempo Slider");
+				}
 				focusPlayButton();
+				MidiPlaybackControl.this.requestLayout();
 			}
 
 		});
@@ -128,8 +138,7 @@ public class MidiPlaybackControl extends Composite {
 		});
 
 		displayer = new Label(this, SWT.CENTER);
-		displayer.setLayoutData(new GridData(80, SWT.DEFAULT)); // XXX proper width
-
+		displayer.setLayoutData( new GridData(80, SWT.DEFAULT)); // XXX proper width
 	}
 
 	private Image getImage(String name) {
@@ -227,6 +236,19 @@ public class MidiPlaybackControl extends Composite {
 		return MessageFormat.format("{0}:{1,number,00}", seconds / secondsInMinute, seconds % secondsInMinute);
 	}
 
+	// Tempo
+
+	private TempoEditor addAndGetTempoControl(Composite parent) {
+		TempoEditor result = new TempoEditor(parent, sequencer);
+		result.setValue((int)(sequencer.getTempoFactor()*100));
+		GridData layoutData = new GridData();
+		layoutData.horizontalSpan=3;
+		layoutData.horizontalAlignment = SWT.FILL;
+		layoutData.grabExcessHorizontalSpace = true;
+		result.setLayoutData(layoutData);
+		return result;
+	}
+
 	private class Updater implements Runnable {
 
 		@Override
@@ -241,6 +263,5 @@ public class MidiPlaybackControl extends Composite {
 				Display.getDefault().timerExec(millisecondsPerSecond / framesPerSecond, this);
 			}
 		}
-
 	}
 }

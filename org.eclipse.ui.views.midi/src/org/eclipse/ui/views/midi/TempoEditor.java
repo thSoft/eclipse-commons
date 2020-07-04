@@ -1,7 +1,9 @@
 package org.eclipse.ui.views.midi;
 
 import java.text.MessageFormat;
-import org.eclipse.jface.resource.ImageDescriptor;
+
+import javax.sound.midi.Sequencer;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -12,24 +14,25 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Slider;
 
-public class NumericValueEditor extends Composite {
+public class TempoEditor extends Composite {
 
 	private int value;
+	private int maximumValue=200;
 
-	public int getValue() {
+	private int getValue() {
 		return value;
 	}
 
-	public void setValue(int value, boolean callback) {
-		value = Math.max(0, Math.min(getMaximumValue(), value));
+	private void setValue(int value, boolean callback) {
+		value = Math.max(0, Math.min(maximumValue, value));
 		this.value = value;
 		if(slider.isDisposed()){
 			return;
 		}
 		slider.setSelection(value);
-		displayer.setText(MessageFormat.format("{0}/{1}", hooks.display(value), hooks.display(getMaximumValue())));
+		displayer.setText(displayTempo(computeTempoFactor(value)));
 		if (callback) {
-			hooks.valueSet(value);
+			sequencer.setTempoFactor(computeTempoFactor(value));
 		}
 	}
 
@@ -37,44 +40,37 @@ public class NumericValueEditor extends Composite {
 		setValue(value, true);
 	}
 
-	public void resetValue() {
+	private void resetValue() {
 		setValue(defaultValue);
 	}
 
-	private int maximumValue;
-
-	public int getMaximumValue() {
-		return maximumValue;
-	}
-
-	public void setMaximumValue(int maximumValue) {
-		this.maximumValue = maximumValue;
+	private void initMaximumValue() {
 		slider.setMaximum(maximumValue + 1);
 		slider.setPageIncrement(maximumValue / 10);
 		slider.setIncrement(maximumValue / 100);
 		setValue(getValue(), false);
 	}
 
-	private final int defaultValue;
+	private final int defaultValue=100;
 
 	private final Slider slider;
 
 	private final Label displayer;
 	private final Button resetter;
 
-	private final ValueHooks hooks;
+	private final Sequencer sequencer;
 
-	public NumericValueEditor(Composite parent, String name, ImageDescriptor icon, ImageDescriptor resetterIcon, int maximumValue, int defaultValue, ValueHooks hooks) {
+	public TempoEditor(Composite parent, Sequencer sequencer) {
 		super(parent, SWT.NONE);
-		this.hooks = hooks;
+		this.sequencer = sequencer;
 		setLayout(new GridLayout(4, false));
 
 		Label header = new Label(this, SWT.NONE);
-		header.setImage(icon.createImage());
-		header.setToolTipText(name);
+		header.setImage( Activator.getImageDescriptor(MidiViewPage.ICON_PATH + "Tempo.png").createImage()); //$NON-NLS-1$
+		header.setToolTipText("Tempo"); //$NON-NLS-1$
 
 		resetter = new Button(this, SWT.FLAT);
-		resetter.setImage(resetterIcon.createImage());
+		resetter.setImage(Activator.getImageDescriptor(MidiViewPage.ICON_PATH + "Reset.png").createImage());
 		setResetterValue(defaultValue);
 		resetter.addSelectionListener(new SelectionAdapter() {
 
@@ -103,15 +99,20 @@ public class NumericValueEditor extends Composite {
 		displayer = new Label(this, SWT.CENTER);
 		displayer.setLayoutData(new GridData(80, SWT.DEFAULT)); // XXX proper width
 
-		this.setMaximumValue(maximumValue);
-		this.defaultValue = defaultValue;
-		setValue(defaultValue);
+		initMaximumValue();
 	}
 
 	void setResetterValue(int value) {
 		if(resetter!=null && !resetter.isDisposed()) {
-			resetter.setToolTipText(MessageFormat.format("Reset to {0}", hooks.display(value)));
+			resetter.setToolTipText(MessageFormat.format("Reset to {0}", displayTempo(computeTempoFactor(value))));
 		}
 	}
 
+	private String displayTempo(float tempo) {
+		return MessageFormat.format("{0,number,0.00}x", tempo);
+	}
+
+	private float computeTempoFactor(int value) {
+		return value / (float)100;
+	}
 }

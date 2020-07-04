@@ -1,7 +1,6 @@
 package org.eclipse.ui.views.midi;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,7 +57,6 @@ public class MidiViewPage extends ScrolledComposite {
 		sequencer.open();
 
 		playbackControl = new MidiPlaybackControl(content, sequencer);
-		addTempo(content);
 		addTracks(content);
 		for (Control child : content.getChildren()) {
 			GridData layoutData = new GridData();
@@ -107,29 +105,6 @@ public class MidiViewPage extends ScrolledComposite {
 
 	public void togglePlayback() {
 		playbackControl.togglePlayback();
-	}
-
-	// Tempo
-
-	private void addTempo(Composite parent) {
-		int MAX_TEMPO_FACTOR = 200;
-		new NumericValueEditor(parent, "Tempo", Activator.getImageDescriptor(ICON_PATH + "Tempo.png"), Activator.getImageDescriptor(ICON_PATH + "Reset.png"), MAX_TEMPO_FACTOR, MAX_TEMPO_FACTOR / 2, new ValueHooks() { //$NON-NLS-2$ //$NON-NLS-3$
-
-			@Override
-			public String display(int value) {
-				return MessageFormat.format("{0,number,0.00}x", computeFactor(value));
-			}
-
-			@Override
-			public void valueSet(int value) {
-				sequencer.setTempoFactor(computeFactor(value));
-			}
-
-			private float computeFactor(int value) {
-				return value / (float)100;
-			}
-
-		});
 	}
 
 	// Tracks

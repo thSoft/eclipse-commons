@@ -5,8 +5,11 @@ import java.text.MessageFormat;
 import javax.sound.midi.Sequencer;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -35,8 +38,30 @@ public class MidiPlaybackControl extends Composite {
 
 		createButtonRow();
 		createSliderRow();
+		addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				drawMarker(e);
+			}
+		});
 
 		rewind();
+	}
+
+	private void drawMarker(PaintEvent e) {
+		if (mark > 0) {
+			//how to obtain the platform specific button width?? 
+			//OS.GetSystemMetrics (OS.SM_CXHSCROLL);
+			int buttonWidth = 17;
+			int baseX = slider.getLocation().x + buttonWidth - 4;
+			int baseY = slider.getLocation().y - 5;
+			int effectiveWidth = slider.getSize().x - 3 * buttonWidth;
+			baseX += effectiveWidth * ((float) mark) / (slider.getMaximum() - slider.getMinimum());
+
+			e.gc.setBackground(e.display.getSystemColor(SWT.COLOR_BLACK));
+			e.gc.fillPolygon(new int[] { baseX, baseY, baseX + 8, baseY, (baseX + 8 / 2), baseY + 4 });
+		}
 	}
 
 	private void createButtonRow() {
@@ -91,9 +116,10 @@ public class MidiPlaybackControl extends Composite {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				mark = getValue();
-				goToMark.setEnabled(true);
+				goToMark.setEnabled(mark>0);
 				goToMark.setToolTipText(MessageFormat.format("Reset to mark ({0})", display(mark)));
 				focusPlayButton();
+				redraw();//force marker update
 			}
 		});
 

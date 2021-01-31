@@ -60,7 +60,7 @@ public class PdfViewPage extends ScrolledComposite {
 				if (image != null) {
 					event.gc.drawImage(image, 0, 0);
 				}
-		    }
+			}
 		});
 		getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
 		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
@@ -136,6 +136,9 @@ public class PdfViewPage extends ScrolledComposite {
 				public void run() {
 					if(pdfDisplay.isDisposed()){
 						return;
+					}
+					if (image != null) {
+						image.dispose();
 					}
 					image = new Image(getDisplay(), ImageUtils.convertBufferedImageToImageData(awtImage));
 					int width = awtImage.getWidth();
@@ -250,6 +253,9 @@ public class PdfViewPage extends ScrolledComposite {
 			annotationHyperlinkMap.clear();
 			pdfDecoder.closePdfFile();
 		}
+		if(image!=null) {
+			image.dispose();
+		}
 		pdfDisplay.dispose();
 		this.dispose();
 	}
@@ -271,6 +277,9 @@ public class PdfViewPage extends ScrolledComposite {
 		} else if (page < 1) {
 			this.page = 1;
 		} else {
+			if (this.page != page && highlightedHyperlink != null) {
+				highlightedHyperlink = null;
+			}
 			this.page = page;
 		}
 		redraw();
@@ -874,7 +883,9 @@ public class PdfViewPage extends ScrolledComposite {
 		@Override
 		public void run() {
 			HyperlinkHighlightAnimatorState state = states[stateIndex];
-			if (!state.isReady()) {
+			if (highlightedHyperlink == null || pdfDisplay == null || pdfDisplay.isDisposed()) {
+				return;
+			} else if (!state.isReady()) {
 				state.step();
 				pdfDisplay.redraw();
 			} else {

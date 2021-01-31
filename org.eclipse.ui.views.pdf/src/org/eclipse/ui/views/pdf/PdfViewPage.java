@@ -54,6 +54,14 @@ public class PdfViewPage extends ScrolledComposite {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		pdfDisplay = new Composite(this, SWT.NONE);
 		pdfDisplay.setBackgroundMode(SWT.INHERIT_FORCE);
+		pdfDisplay.addPaintListener(new PaintListener() {
+			@Override
+			public void paintControl(PaintEvent event) {
+				if (image != null) {
+					event.gc.drawImage(image, 0, 0);
+				}
+		    }
+		});
 		getHorizontalBar().setIncrement(getHorizontalBar().getIncrement() * 4);
 		getVerticalBar().setIncrement(getVerticalBar().getIncrement() * 4);
 		pdfDisplay.addPaintListener(new HyperlinkHighlightPaintListener());
@@ -85,6 +93,11 @@ public class PdfViewPage extends ScrolledComposite {
 	 * The control displaying the current page of the PDF file.
 	 */
 	private final Composite pdfDisplay;
+	
+	/**
+	 * The image of the current page of the PDF file.
+	 */
+	private Image image;
 
 	/**
 	 * The PDF engine which renders the pages.
@@ -124,17 +137,13 @@ public class PdfViewPage extends ScrolledComposite {
 					if(pdfDisplay.isDisposed()){
 						return;
 					}
-					Image swtImage = new Image(getDisplay(), ImageUtils.convertBufferedImageToImageData(awtImage));
-					Image oldImage = pdfDisplay.getBackgroundImage();
-					if (oldImage != null) {
-						oldImage.dispose();
-					}
-					pdfDisplay.setBackgroundImage(swtImage);
+					image = new Image(getDisplay(), ImageUtils.convertBufferedImageToImageData(awtImage));
 					int width = awtImage.getWidth();
 					int height = awtImage.getHeight();
 					pdfDisplay.setSize(width, height);
 					align();
 					refreshToolbar();
+					pdfDisplay.redraw();
 				}
 
 			});
@@ -473,7 +482,9 @@ public class PdfViewPage extends ScrolledComposite {
 			return null;
 		}
 
-		private void addRawObjectToPdfAnnotationList(Integer page, FormObject formObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
+		private void addRawObjectToPdfAnnotationList(Integer page, Object rawObject, List<PdfAnnotation> list, Map<String, IFile> fileCache){
+			if (rawObject instanceof FormObject) {
+				FormObject formObject = (FormObject) rawObject;
 				int subtype = formObject.getParameterConstant(PdfDictionary.Subtype);
 				if (subtype == PdfDictionary.Link) {
 					PdfObject anchor = formObject.getDictionary(PdfDictionary.A);
@@ -520,6 +531,7 @@ public class PdfViewPage extends ScrolledComposite {
 						Activator.logError("Error while parsing annotation URI", e);
 					}
 				}
+			}
 		}
 
 		/**
@@ -540,8 +552,13 @@ public class PdfViewPage extends ScrolledComposite {
 				while (!monitor.isCanceled() && pdfAnnotations.hasMoreTokens()) {
 					String key = pdfAnnotations.getNextValueAsString(true);
 					Object rawObject = formRenderer.getFormDataAsObject(key);
-					if(rawObject!=null && rawObject instanceof FormObject){
-						addRawObjectToPdfAnnotationList(page, (FormObject)rawObject, annotationsOnPage, fileCache);
+					if (rawObject instanceof Object[]) {
+						Object[] rawObjects = (Object[]) rawObject;
+						for (Object object : rawObjects) {
+							addRawObjectToPdfAnnotationList(page, object, annotationsOnPage, fileCache);
+						}
+					} else {
+						addRawObjectToPdfAnnotationList(page, rawObject, annotationsOnPage, fileCache);
 					}
 				}
 			}

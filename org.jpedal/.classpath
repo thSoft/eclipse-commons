@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="jpedal_lgpl-4.92-p13.jar" sourcepath="jpedal_lgpl-4.92-p13-sources.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry exported="true" kind="lib" path="jpedal_lgpl.jar" sourcepath="jpedal_lgpl_src.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

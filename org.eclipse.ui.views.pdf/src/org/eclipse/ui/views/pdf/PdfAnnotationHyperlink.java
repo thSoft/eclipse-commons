@@ -20,9 +20,6 @@ public class PdfAnnotationHyperlink extends Composite {
 					if (annotation.fileURI != null) {
 						TextEditorUtils.revealPosition(annotation.fileURI, annotation.lineNumber,
 								annotation.columnNumber, 1);
-					} else if (annotation.file != null) {
-						TextEditorUtils.revealPosition(annotation.file, annotation.lineNumber, annotation.columnNumber,
-								1);
 					}
 				}
 			}

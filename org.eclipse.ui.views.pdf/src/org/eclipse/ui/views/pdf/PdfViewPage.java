@@ -523,7 +523,6 @@ public class PdfViewPage extends ScrolledComposite {
 								PdfAnnotation annotation = new PdfAnnotation();
 								annotation.page = page;
 								annotation.fileURI = targetURI;
-								annotation.file = targetIFile;
 								annotation.lineNumber = Integer.parseInt(sections[1]) - 1;
 								annotation.columnNumber = Integer.parseInt(sections[2]); // This value is independent of tab width
 								float[] rectangle = formObject.getFloatArray(PdfDictionary.Rect);

@@ -5,19 +5,22 @@ import java.text.MessageFormat;
 import javax.sound.midi.Sequencer;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Slider;
+import org.eclipse.swt.widgets.Text;
 
 public class MidiPlaybackControl extends Composite {
 
@@ -30,6 +33,7 @@ public class MidiPlaybackControl extends Composite {
 	private final Sequencer sequencer;
 	private Button playPause;
 	private TempoEditor tempoControl;
+	private MeasureControls measureControls;
 
 	public MidiPlaybackControl(Composite parent, Sequencer sequencer) {
 		super(parent, SWT.NONE);
@@ -45,7 +49,6 @@ public class MidiPlaybackControl extends Composite {
 				drawMarker(e);
 			}
 		});
-
 		rewind();
 	}
 
@@ -66,7 +69,7 @@ public class MidiPlaybackControl extends Composite {
 
 	private void createButtonRow() {
 		Composite rowParent = new Composite(this, SWT.NONE);
-		rowParent.setLayout(new GridLayout(5, false));
+		rowParent.setLayout(new GridLayout(6, false));
 		GridData rowLayoutData = new GridData();
 		rowLayoutData.horizontalSpan = 3;
 		rowParent.setLayoutData(rowLayoutData);
@@ -140,12 +143,12 @@ public class MidiPlaybackControl extends Composite {
 				togglePlayback();
 			}
 		});
+		this.measureControls = new MeasureControls(rowParent);
 	}
 
 	private void focusPlayButton() {
 		playPause.forceFocus();
 	}
-
 
 	private void createSliderRow() {
 		slider = new Slider(this, SWT.NONE);
@@ -183,6 +186,7 @@ public class MidiPlaybackControl extends Composite {
 		}
 		slider.setSelection(value);
 		displayer.setText(MessageFormat.format("{0}/{1}", display(value), maxValueString));
+		measureControls.updateMeasure(value);
 		if (setSequncerPosition) {
 			sequencer.setMicrosecondPosition(value);
 		}
@@ -209,15 +213,17 @@ public class MidiPlaybackControl extends Composite {
 	}
 
 	public void sequencerContentChanged() {
-		this.maximumValue = (int)sequencer.getMicrosecondLength();
+		this.maximumValue = (int) sequencer.getMicrosecondLength();
 		slider.setMaximum(maximumValue + 1);
 		slider.setPageIncrement(maximumValue / 10);
 		slider.setIncrement(maximumValue / 100);
-		maxValueString=display(maximumValue);
+		maxValueString = display(maximumValue);
 		setValue(getValue(), false);
+		measureControls.sequencerContentChanged();
 	}
 
 	private void play() {
+		measureControls.setEditable(false);
 		sequencer.start();
 		playPauseImage("Pause");
 		Display.getDefault().timerExec(0, new Updater());
@@ -227,6 +233,7 @@ public class MidiPlaybackControl extends Composite {
 		if (sequencer.isOpen()) {
 			sequencer.stop();
 			playPauseImage("Play");
+			measureControls.setEditable(true);
 		}
 	}
 
@@ -287,6 +294,128 @@ public class MidiPlaybackControl extends Composite {
 				final int millisecondsPerSecond = 1000;
 				final int framesPerSecond = 25;
 				Display.getDefault().timerExec(millisecondsPerSecond / framesPerSecond, this);
+			}
+		}
+	}
+
+	// Measure controls
+
+	private class MeasureControls {
+		private Label upbeatLabel;
+		private Text upbeat;
+		private Label measureLabel;
+		private Text measure;
+		private MidiMeasureAnalyzer analyzer;
+		private boolean ignoreNextUpdateMeasure;
+		private long lastValue;// negative value indicates no update
+
+		MeasureControls(Composite rowParent) {
+			Composite mParent = new Composite(rowParent, SWT.NONE);
+			GridLayout mLayout = new GridLayout(2, false);
+			mLayout.verticalSpacing = 2;
+			mLayout.marginBottom = -5;
+			mLayout.marginTop = -5;
+			mParent.setLayout(mLayout);
+
+			GridData measureData = new GridData();
+			measureData.widthHint = 35;
+			measureData.grabExcessHorizontalSpace = false;
+
+			upbeatLabel = new Label(mParent, SWT.NONE);
+			upbeatLabel.setText("Upbeat:");
+			upbeat = new Text(mParent, SWT.NONE);
+			upbeat.setText("");
+			upbeat.setTextLimit(6);
+			upbeat.setToolTipText(
+					"If the score starts with a partial measure,\nplease provide its duration!\nFormat examples '1/4', '3/8'");
+			upbeat.addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyReleased(KeyEvent e) {
+					handleMeasureKeyEvent(e);
+				}
+			});
+			upbeat.setLayoutData(measureData);
+
+			measureLabel = new Label(mParent, SWT.NONE);
+			measureLabel.setText("Measure:");
+			measure = new Text(mParent, SWT.NONE);
+			measure.setText("1");
+			measure.setTextLimit(4);
+			measure.setToolTipText("Enter measure number and press Return to go to approximate time!");
+			measure.addKeyListener(new KeyAdapter() {
+
+				@Override
+				public void keyReleased(KeyEvent e) {
+					handleMeasureKeyEvent(e);
+				}
+			});
+			measure.setLayoutData(measureData);
+			this.analyzer = new MidiMeasureAnalyzer(sequencer, upbeat);
+		}
+
+		public void sequencerContentChanged() {
+			if (!analyzer.calculateMeasureTimes()) {
+				lastValue=-1;
+				setVisible(upbeatLabel, false);
+				setVisible(upbeat, false);
+				setVisible(measureLabel, false);
+				setVisible(measure, false);
+			} else {
+				lastValue=0;
+				setVisible(upbeatLabel, true);
+				setVisible(upbeat, true);
+				setVisible(measureLabel, true);
+				setVisible(measure, true);
+				upbeat.setText("");
+				measure.setText("1");
+			}
+		}
+
+		private void setVisible(Control c, boolean visible) {
+			if (c != null && !c.isDisposed()) {
+				c.setVisible(visible);
+			}
+		}
+
+		private void setEditable(boolean editable) {
+			if (measure != null && !measure.isDisposed()) {
+				measure.setEditable(editable);
+			}
+			if (upbeat != null && !upbeat.isDisposed()) {
+				upbeat.setEditable(editable);
+			}
+		}
+
+		private void handleMeasureKeyEvent(KeyEvent e) {
+			if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
+				if (e.widget == upbeat && (measure.getText() == null || measure.getText().trim().isEmpty())) {
+					measure.setText("1");
+				}
+				int time = analyzer.getTime(measure.getText());
+				if (time >= 0) {
+					ignoreNextUpdateMeasure = true;
+					lastValue = 0;
+					setValue(time);
+				} else {
+					measure.setText("");
+				}
+				playPause.forceFocus();
+			}
+		}
+
+		private void updateMeasure(long microSeconds) {
+			if (ignoreNextUpdateMeasure) {
+				ignoreNextUpdateMeasure = false;
+			} else if (lastValue >= 0 && microSeconds != getMaximumValue()
+					&& Math.abs(lastValue - microSeconds) > 10000) {
+				lastValue = microSeconds;
+				int bar = analyzer.getMeasure(microSeconds);
+				if (bar >= 0) {
+					measure.setText("" + bar);
+				} else {
+					lastValue = -1;
+					measure.setText("");
+				}
 			}
 		}
 	}
